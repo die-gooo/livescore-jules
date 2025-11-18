@@ -86,7 +86,7 @@ export default function AdminPage() {
     }
   };
 
-  const updateStatus = async (status: 'LIVE' | 'HALFTIME' | 'FINAL') => {
+  const updateStatus = async (status: 'live' | 'halftime' | 'final') => {
     if (!match) return;
 
     const { error } = await supabase
