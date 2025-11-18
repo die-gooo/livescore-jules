@@ -117,13 +117,13 @@ export default function AdminPage() {
           <h2 className="text-2xl font-bold text-center mb-4">{match.home_team.name} vs {match.away_team.name}</h2>
           <p className="text-center text-lg mb-4">Score: {match.home_score} - {match.away_score}</p>
           <p className="text-center text-lg mb-4">Status: {match.status}</p>
-          <div className="flex gap-4 justify-center">
-            <button onClick={() => updateScore('home')} className="p-2 bg-blue-500 text-white rounded">+1 Home Goal</button>
-            <button onClick={() => updateScore('away')} className="p-2 bg-blue-500 text-white rounded">+1 Away Goal</button>
-            <button onClick={() => updateStatus('LIVE')} className="p-2 bg-yellow-500 text-white rounded">Live</button>
-            <button onClick={() => updateStatus('HALFTIME')} className="p-2 bg-yellow-500 text-white rounded">Halftime</button>
-            <button onClick={() => updateStatus('FINAL')} className="p-2 bg-green-500 text-white rounded">Final</button>
-          </div>
+<div className="flex gap-4 justify-center">
+  <button onClick={() => updateScore('home')} className="p-2 bg-blue-500 text-white rounded">+1 Home Goal</button>
+  <button onClick={() => updateScore('away')} className="p-2 bg-blue-500 text-white rounded">+1 Away Goal</button>
+  <button onClick={() => updateStatus('live')} className="p-2 bg-yellow-500 text-white rounded">Live</button>
+  <button onClick={() => updateStatus('halftime')} className="p-2 bg-yellow-500 text-white rounded">Halftime</button>
+  <button onClick={() => updateStatus('final')} className="p-2 bg-green-500 text-white rounded">Final</button>
+</div>
         </div>
       ) : (
         <p>No match found for your team.</p>
