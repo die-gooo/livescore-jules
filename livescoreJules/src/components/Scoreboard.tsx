@@ -3,8 +3,15 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-// Define a more specific type for our match data for better code quality
+/**
+ * Shape of a match used within the scoreboard.
+ *
+ * Supabase ritorna i dati relazionati (competition, home_team, away_team)
+ * sotto forma di array di un solo elemento. Per comodità normalizziamo
+ * questi campi in oggetti singoli quando carichiamo i dati.
+ */
 type Match = {
+  // Conservo l’id come stringa così da evitare problemi di confronto con numeri
   id: string;
   home_score: number;
   away_score: number;
@@ -28,7 +35,7 @@ export default function Scoreboard() {
   const [updatedMatchId, setUpdatedMatchId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Function to fetch the initial data
+    // Recupera e normalizza i match iniziali
     const fetchMatches = async () => {
       const { data, error } = await supabase
         .from('matches')
@@ -47,45 +54,53 @@ export default function Scoreboard() {
       if (error) {
         console.error('Error fetching matches:', error);
       } else if (data) {
-        setMatches(data as Match[]);
+        // Converto array in oggetti singoli e id in stringa
+        const processed: Match[] = (data as any[]).map((m) => ({
+          id: String(m.id),
+          home_score: m.home_score,
+          away_score: m.away_score,
+          status: m.status,
+          competition: Array.isArray(m.competition) ? (m.competition[0] ?? { name: '' }) : { name: '' },
+          home_team: Array.isArray(m.home_team) ? (m.home_team[0] ?? { name: '', logo_url: '' }) : { name: '', logo_url: '' },
+          away_team: Array.isArray(m.away_team) ? (m.away_team[0] ?? { name: '', logo_url: '' }) : { name: '', logo_url: '' },
+        }));
+        setMatches(processed);
       }
       setLoading(false);
     };
 
     fetchMatches();
 
-    // Set up the real-time subscription
+    // Configura la sottoscrizione realtime per gli aggiornamenti
     const channel = supabase
       .channel('realtime-matches')
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'matches' },
         (payload) => {
-          // *** THIS IS THE CORRECTED LOGIC ***
-          // It now correctly updates the match in the list without losing team/league data.
-          setMatches((prevMatches) =>
-            prevMatches.map((match) => {
-              if (match.id === payload.new.id) {
-                // Return the existing match data but with the new scores and status
-                return {
-                  ...match,
-                  home_score: payload.new.home_score,
-                  away_score: payload.new.away_score,
-                  status: payload.new.status,
-                };
-              }
-              return match;
-            })
-          );
+          // Converto l’ID a stringa per confronto sicuro
+          const updatedId = String(payload.new.id);
 
-          // This triggers the "Updated" badge to appear
-          setUpdatedMatchId(payload.new.id);
-          setTimeout(() => setUpdatedMatchId(null), 3000); // The badge will disappear after 3 seconds
+          setMatches((prevMatches) =>
+            prevMatches.map((match) =>
+              match.id === updatedId
+                ? {
+                    ...match,
+                    home_score: payload.new.home_score,
+                    away_score: payload.new.away_score,
+                    status: payload.new.status,
+                  }
+                : match
+            )
+          );
+          // Attiva il badge GOAL per tre secondi
+          setUpdatedMatchId(updatedId);
+          setTimeout(() => setUpdatedMatchId(null), 3000);
         }
       )
       .subscribe();
 
-    // Cleanup function to remove the channel subscription when the component is no longer on screen
+    // Pulizia alla dismissione del componente
     return () => {
       supabase.removeChannel(channel);
     };
@@ -102,20 +117,24 @@ export default function Scoreboard() {
           <div key={match.id} className="border p-4 my-2 rounded-lg relative shadow-sm bg-white">
             {updatedMatchId === match.id && (
               <span className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
-                Updated
+                GOAL
               </span>
             )}
             <div className="text-sm text-gray-500 text-center mb-2">{match.competition.name}</div>
             <div className="flex items-center justify-between mt-2">
               <div className="flex-1 flex items-center justify-start text-right">
                 <span className="font-bold text-lg mr-2">{match.home_team.name}</span>
-                {match.home_team.logo_url && <img src={match.home_team.logo_url} alt={match.home_team.name} className="w-8 h-8" />}
+                {match.home_team.logo_url && (
+                  <img src={match.home_team.logo_url} alt={match.home_team.name} className="w-8 h-8" />
+                )}
               </div>
               <div className="text-3xl font-bold mx-4">
                 {match.home_score} - {match.away_score}
               </div>
               <div className="flex-1 flex items-center justify-end">
-                {match.away_team.logo_url && <img src={match.away_team.logo_url} alt={match.away_team.name} className="w-8 h-8" />}
+                {match.away_team.logo_url && (
+                  <img src={match.away_team.logo_url} alt={match.away_team.name} className="w-8 h-8" />
+                )}
                 <span className="font-bold text-lg ml-2">{match.away_team.name}</span>
               </div>
             </div>
