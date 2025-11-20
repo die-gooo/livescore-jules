@@ -183,16 +183,20 @@ export default function Scoreboard() {
             {/* Colore dello stato in base al suo contenuto */}
             <div
               className={`text-center mt-2 text-sm font-semibold capitalize ${
-                match.status.toLowerCase().includes('live')
-                  ? 'text-yellow-500'
-                  : match.status.toLowerCase() === 'halftime'
-                  ? 'text-orange-500'
-                  : match.status.toLowerCase() === 'final'
-                  ? 'text-red-500'
-                  : match.status.toLowerCase() === 'in programma' ||
-                    match.status.toLowerCase() === 'scheduled'
-                  ? 'text-blue-500'
-                  : 'text-gray-600'
+          match.status.toLowerCase().includes('live')
+          ? 'text-yellow-500'
+          : match.status.toLowerCase() === 'halftime'
+          ? 'text-orange-500'
+          : match.status.toLowerCase() === 'final'
+          ? 'text-red-500'
+          : match.status.toLowerCase() === 'sospesa'
+          ? 'text-purple-500'
+          : match.status.toLowerCase() === 'rinviata'
+          ? 'text-gray-500'
+          : match.status.toLowerCase() === 'in programma' ||
+            match.status.toLowerCase() === 'scheduled'
+          ? 'text-blue-500'
+          : 'text-gray-600''
               }`}
             >
               {match.status}
