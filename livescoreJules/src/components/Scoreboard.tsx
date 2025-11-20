@@ -8,6 +8,8 @@ type Match = {
   home_score: number;
   away_score: number;
   status: string;
+  /** Orario di inizio in formato ISO */
+  start_time: string;
   competition: { name: string };
   home_team: { name: string; logo_url: string };
   away_team: { name: string; logo_url: string };
@@ -49,17 +51,20 @@ export default function Scoreboard() {
           home_score: m.home_score,
           away_score: m.away_score,
           status: m.status,
+          start_time: m.start_time,
           competition: m.competition ?? { name: '' },
           home_team: m.home_team ?? { name: '', logo_url: '' },
           away_team: m.away_team ?? { name: '', logo_url: '' },
         }));
 
-        // badge solo per cambi di punteggio
         let goalBadge: { id: string; text: string; color: string } | null = null;
         processed.forEach((newMatch) => {
           const prev = matchesRef.current.find((m) => m.id === newMatch.id);
           if (prev) {
-            if (prev.home_score !== newMatch.home_score || prev.away_score !== newMatch.away_score) {
+            if (
+              prev.home_score !== newMatch.home_score ||
+              prev.away_score !== newMatch.away_score
+            ) {
               goalBadge = { id: newMatch.id, text: 'GOAL', color: 'bg-green-500' };
             }
           }
@@ -132,11 +137,35 @@ export default function Scoreboard() {
               </span>
             )}
             <div className="text-sm text-gray-500 text-center mb-2">{match.competition.name}</div>
+            {/* Mostra l’orario di inizio formattato */}
+            <div className="text-xs text-gray-500 text-center mb-1">
+              {(() => {
+                if (!match.start_time) return null;
+                const dateObj = new Date(match.start_time);
+                if (isNaN(dateObj.getTime())) return null;
+                const timePart = dateObj.toLocaleTimeString('it-IT', {
+                  timeZone: 'Europe/Rome',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+                const datePart = dateObj.toLocaleDateString('it-IT', {
+                  timeZone: 'Europe/Rome',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                });
+                return `ore ${timePart} - ${datePart}`;
+              })()}
+            </div>
             <div className="flex items-center justify-between mt-2">
               <div className="flex-1 flex items-center justify-start text-right">
                 <span className="font-bold text-lg mr-2">{match.home_team.name}</span>
                 {match.home_team.logo_url && (
-                  <img src={match.home_team.logo_url} alt={match.home_team.name} className="w-8 h-8" />
+                  <img
+                    src={match.home_team.logo_url}
+                    alt={match.home_team.name}
+                    className="w-8 h-8"
+                  />
                 )}
               </div>
               <div className="text-3xl font-bold mx-4">
@@ -144,7 +173,11 @@ export default function Scoreboard() {
               </div>
               <div className="flex-1 flex items-center justify-end">
                 {match.away_team.logo_url && (
-                  <img src={match.away_team.logo_url} alt={match.away_team.name} className="w-8 h-8" />
+                  <img
+                    src={match.away_team.logo_url}
+                    alt={match.away_team.name}
+                    className="w-8 h-8"
+                  />
                 )}
                 <span className="font-bold text-lg ml-2">{match.away_team.name}</span>
               </div>
@@ -157,6 +190,9 @@ export default function Scoreboard() {
                   ? 'text-orange-500'
                   : match.status === 'final'
                   ? 'text-red-500'
+                  : match.status.toLowerCase() === 'in programma' ||
+                    match.status.toLowerCase() === 'scheduled'
+                  ? 'text-blue-500'
                   : 'text-gray-600'
               }`}
             >
