@@ -8,7 +8,6 @@ type Match = {
   home_score: number;
   away_score: number;
   status: string;
-  /** Orario di inizio in formato ISO */
   start_time: string;
   competition: { name: string };
   home_team: { name: string; logo_url: string };
@@ -137,7 +136,6 @@ export default function Scoreboard() {
               </span>
             )}
             <div className="text-sm text-gray-500 text-center mb-2">{match.competition.name}</div>
-            {/* Mostra l’orario di inizio formattato */}
             <div className="text-xs text-gray-500 text-center mb-1">
               {(() => {
                 if (!match.start_time) return null;
@@ -182,13 +180,14 @@ export default function Scoreboard() {
                 <span className="font-bold text-lg ml-2">{match.away_team.name}</span>
               </div>
             </div>
+            {/* Colore dello stato in base al suo contenuto */}
             <div
               className={`text-center mt-2 text-sm font-semibold capitalize ${
-                match.status === 'live'
+                match.status.toLowerCase().includes('live')
                   ? 'text-yellow-500'
-                  : match.status === 'halftime'
+                  : match.status.toLowerCase() === 'halftime'
                   ? 'text-orange-500'
-                  : match.status === 'final'
+                  : match.status.toLowerCase() === 'final'
                   ? 'text-red-500'
                   : match.status.toLowerCase() === 'in programma' ||
                     match.status.toLowerCase() === 'scheduled'
