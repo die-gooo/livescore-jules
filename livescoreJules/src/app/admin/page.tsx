@@ -2,190 +2,183 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-
-type Match = {
-  id: string;
-  home_score: number;
-  away_score: number;
-  status: string;
-  home_team: { name: string; logo_url: string };
-  away_team: { name: string; logo_url: string };
-};
+import { User } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 
 export default function AdminPage() {
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchMatches = async () => {
-      const { data, error } = await supabase
-        .from('matches')
-        .select(`
-          id,
-          home_score,
-          away_score,
-          status,
-          home_team:teams!matches_home_team_id_fkey (name, logo_url),
-          away_team:teams!matches_away_team_id_fkey (name, logo_url)
-        `)
-        .order('start_time', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching matches:', error);
-        return;
-      }
-      if (data) {
-        const processed: Match[] = (data as any[]).map((m) => ({
-          id: String(m.id),
-          home_score: m.home_score,
-          away_score: m.away_score,
-          status: m.status,
-          home_team: m.home_team ?? { name: '', logo_url: '' },
-          away_team: m.away_team ?? { name: '', logo_url: '' },
-        }));
-        setMatches(processed);
-      }
-      setLoading(false);
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
     };
-
-    fetchMatches();
+    getUser();
   }, []);
 
-  // Increment goal
-  const updateScore = async (id: string, team: 'home' | 'away') => {
-    const match = matches.find((m) => m.id === id);
+  const fetchMatch = async () => {
+    if (!user) return;
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('team_id')
+      .eq('id', user.id)
+      .single();
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      setLoading(false);
+      return;
+    }
+    const { data: matchData, error: matchError } = await supabase
+      .from('matches')
+      .select(`
+        id,
+        start_time,
+        status,
+        home_score,
+        away_score,
+        home_team:teams!matches_home_team_id_fkey(name, logo_url),
+        away_team:teams!matches_away_team_id_fkey(name, logo_url)
+      `)
+      .or(`home_team_id.eq.${profile.team_id},away_team_id.eq.${profile.team_id}`)
+      .single();
+    if (matchError) {
+      console.error('Error fetching match:', matchError);
+    } else {
+      setMatch(matchData);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchMatch();
+    }
+  }, [user]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  const updateScore = async (team: 'home' | 'away') => {
+    if (!match) return;
+    const newScore = team === 'home' ? match.home_score + 1 : match.away_score + 1;
+    const scoreField = team === 'home' ? 'home_score' : 'away_score';
+    const { error } = await supabase
+      .from('matches')
+      .update({ [scoreField]: newScore })
+      .eq('id', match.id);
+    if (error) {
+      console.error(`Error updating ${team} score:`, error);
+    } else {
+      // aggiorna subito lo stato locale
+      setMatch((prev: any) => (prev && prev.id === match.id ? { ...prev, [scoreField]: newScore } : prev));
+      fetchMatch();
+    }
+  };
+
+  const decrementScore = async (team: 'home' | 'away') => {
     if (!match) return;
     const newScore =
-      team === 'home' ? match.home_score + 1 : match.away_score + 1;
-
-    const updates =
-      team === 'home'
-        ? { home_score: newScore }
-        : { away_score: newScore };
-
-    const { error } = await supabase.from('matches').update(updates).eq('id', id);
+      team === 'home' ? Math.max(0, match.home_score - 1) : Math.max(0, match.away_score - 1);
+    const scoreField = team === 'home' ? 'home_score' : 'away_score';
+    const { error } = await supabase
+      .from('matches')
+      .update({ [scoreField]: newScore })
+      .eq('id', match.id);
     if (error) {
-      console.error('Error updating score:', error);
+      console.error(`Error decrementing ${team} score:`, error);
+    } else {
+      setMatch((prev: any) => (prev && prev.id === match.id ? { ...prev, [scoreField]: newScore } : prev));
+      fetchMatch();
     }
   };
 
-  // Decrement goal (non scende sotto zero)
-  const decrementScore = async (id: string, team: 'home' | 'away') => {
-    const match = matches.find((m) => m.id === id);
+  const resetMatch = async () => {
     if (!match) return;
-    const currentScore = team === 'home' ? match.home_score : match.away_score;
-    if (currentScore <= 0) return;
-
-    const updates =
-      team === 'home'
-        ? { home_score: currentScore - 1 }
-        : { away_score: currentScore - 1 };
-
-    const { error } = await supabase.from('matches').update(updates).eq('id', id);
-    if (error) {
-      console.error('Error decrementing score:', error);
-    }
-  };
-
-  // Cambia stato (live, halftime, final)
-  const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from('matches').update({ status }).eq('id', id);
-    if (error) {
-      console.error('Error updating status:', error);
-    }
-  };
-
-  // Reset punteggio e stato (riporta a 0-0 e stato live)
-  const resetMatch = async (id: string) => {
     const { error } = await supabase
       .from('matches')
       .update({ home_score: 0, away_score: 0, status: 'live' })
-      .eq('id', id);
+      .eq('id', match.id);
     if (error) {
       console.error('Error resetting match:', error);
+    } else {
+      setMatch((prev: any) =>
+        prev && prev.id === match.id ? { ...prev, home_score: 0, away_score: 0, status: 'live' } : prev
+      );
+      fetchMatch();
     }
   };
 
-  if (loading) {
-    return <div>Loading matches...</div>;
-  }
+  const updateStatus = async (status: 'live' | 'halftime' | 'final') => {
+    if (!match) return;
+    const { error } = await supabase.from('matches').update({ status }).eq('id', match.id);
+    if (error) {
+      console.error('Error updating status:', error);
+    } else {
+      setMatch((prev: any) => (prev && prev.id === match.id ? { ...prev, status } : prev));
+      fetchMatch();
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-      {matches.length === 0 ? (
-        <p>No matches available.</p>
-      ) : (
-        matches.map((match) => (
-          <div
-            key={match.id}
-            className="border rounded-lg p-4 mb-8 shadow-sm bg-white"
-          >
-            <h2 className="text-xl font-semibold mb-2">
-              {match.home_team.name} vs {match.away_team.name}
-            </h2>
-            <div className="mb-2">
-              Score: {match.home_score} - {match.away_score}
-            </div>
-            <div className="mb-4 capitalize">Status: {match.status}</div>
-
-            <div className="flex flex-wrap gap-4 justify-center mt-4">
-              {/* Increment buttons */}
-              <button
-                onClick={() => updateScore(match.id, 'home')}
-                className="p-2 bg-blue-500 text-white rounded"
-              >
-                +1 Home Goal
-              </button>
-              <button
-                onClick={() => updateScore(match.id, 'away')}
-                className="p-2 bg-blue-500 text-white rounded"
-              >
-                +1 Away Goal
-              </button>
-              {/* Decrement buttons */}
-              <button
-                onClick={() => decrementScore(match.id, 'home')}
-                className="p-2 bg-purple-500 text-white rounded"
-              >
-                -1 Home Goal
-              </button>
-              <button
-                onClick={() => decrementScore(match.id, 'away')}
-                className="p-2 bg-purple-500 text-white rounded"
-              >
-                -1 Away Goal
-              </button>
-              {/* Status buttons */}
-              <button
-                onClick={() => updateStatus(match.id, 'live')}
-                className="p-2 bg-yellow-500 text-white rounded"
-              >
-                Live
-              </button>
-              <button
-                onClick={() => updateStatus(match.id, 'halftime')}
-                className="p-2 bg-orange-500 text-white rounded"
-              >
-                Halftime
-              </button>
-              <button
-                onClick={() => updateStatus(match.id, 'final')}
-                className="p-2 bg-red-500 text-white rounded"
-              >
-                Final
-              </button>
-              {/* Reset button */}
-              <button
-                onClick={() => resetMatch(match.id)}
-                className="p-2 bg-gray-600 text-white rounded"
-              >
-                Reset
-              </button>
-            </div>
+    <main className="flex min-h-screen flex-col items-center p-24">
+      <div className="w-full flex justify-end">
+        <button onClick={handleLogout} className="p-2 bg-red-500 text-white rounded">
+          Logout
+        </button>
+      </div>
+      <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
+      {match ? (
+        <div className="border p-4 rounded-lg">
+          <h2 className="text-2xl font-bold text-center mb-4">
+            {match.home_team.name} vs {match.away_team.name}
+          </h2>
+          <p className="text-center text-lg mb-4">
+            Score: {match.home_score} - {match.away_score}
+          </p>
+          <p className="text-center text-lg mb-4">Status: {match.status}</p>
+          <div className="flex flex-wrap gap-4 justify-center mt-4">
+            {/* Increment buttons */}
+            <button onClick={() => updateScore('home')} className="p-2 bg-blue-500 text-white rounded">
+              +1 Home Goal
+            </button>
+            <button onClick={() => updateScore('away')} className="p-2 bg-blue-500 text-white rounded">
+              +1 Away Goal
+            </button>
+            {/* Decrement buttons */}
+            <button onClick={() => decrementScore('home')} className="p-2 bg-purple-500 text-white rounded">
+              -1 Home Goal
+            </button>
+            <button onClick={() => decrementScore('away')} className="p-2 bg-purple-500 text-white rounded">
+              -1 Away Goal
+            </button>
+            {/* Status buttons */}
+            <button onClick={() => updateStatus('live')} className="p-2 bg-yellow-500 text-white rounded">
+              Live
+            </button>
+            <button onClick={() => updateStatus('halftime')} className="p-2 bg-orange-500 text-white rounded">
+              Halftime
+            </button>
+            <button onClick={() => updateStatus('final')} className="p-2 bg-red-500 text-white rounded">
+              Final
+            </button>
+            {/* Reset button */}
+            <button onClick={resetMatch} className="p-2 bg-gray-600 text-white rounded">
+              Reset
+            </button>
           </div>
-        ))
+        </div>
+      ) : (
+        <p>No match found for your team.</p>
       )}
-    </div>
+    </main>
   );
 }
