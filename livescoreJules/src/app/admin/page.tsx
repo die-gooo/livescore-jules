@@ -73,7 +73,6 @@ export default function AdminPage() {
     if (error) {
       console.error(`Error updating ${team} score:`, error);
     } else {
-      // aggiorna subito lo stato locale
       setMatch((prev: any) => (prev && prev.id === match.id ? { ...prev, [scoreField]: newScore } : prev));
       fetchMatch();
     }
@@ -100,19 +99,19 @@ export default function AdminPage() {
     if (!match) return;
     const { error } = await supabase
       .from('matches')
-      .update({ home_score: 0, away_score: 0, status: 'live' })
+      .update({ home_score: 0, away_score: 0, status: 'in programma' })
       .eq('id', match.id);
     if (error) {
       console.error('Error resetting match:', error);
     } else {
       setMatch((prev: any) =>
-        prev && prev.id === match.id ? { ...prev, home_score: 0, away_score: 0, status: 'live' } : prev
+        prev && prev.id === match.id ? { ...prev, home_score: 0, away_score: 0, status: 'in programma' } : prev
       );
       fetchMatch();
     }
   };
 
-  const updateStatus = async (status: 'live' | 'halftime' | 'final') => {
+  const updateStatus = async (status: 'live' | 'halftime' | 'final' | 'in programma') => {
     if (!match) return;
     const { error } = await supabase.from('matches').update({ status }).eq('id', match.id);
     if (error) {
@@ -146,23 +145,23 @@ export default function AdminPage() {
           </p>
           <p className="text-center text-lg mb-4">Status: {match.status}</p>
           <div className="flex flex-wrap gap-4 justify-center mt-4">
-            {/* Increment buttons */}
             <button onClick={() => updateScore('home')} className="p-2 bg-blue-500 text-white rounded">
               +1 Home Goal
             </button>
             <button onClick={() => updateScore('away')} className="p-2 bg-blue-500 text-white rounded">
               +1 Away Goal
             </button>
-            {/* Decrement buttons */}
             <button onClick={() => decrementScore('home')} className="p-2 bg-purple-500 text-white rounded">
               -1 Home Goal
             </button>
             <button onClick={() => decrementScore('away')} className="p-2 bg-purple-500 text-white rounded">
               -1 Away Goal
             </button>
-            {/* Status buttons */}
             <button onClick={() => updateStatus('live')} className="p-2 bg-yellow-500 text-white rounded">
               Live
+            </button>
+            <button onClick={() => updateStatus('in programma')} className="p-2 bg-blue-500 text-white rounded">
+              In programma
             </button>
             <button onClick={() => updateStatus('halftime')} className="p-2 bg-orange-500 text-white rounded">
               Halftime
@@ -170,7 +169,6 @@ export default function AdminPage() {
             <button onClick={() => updateStatus('final')} className="p-2 bg-red-500 text-white rounded">
               Final
             </button>
-            {/* Reset button */}
             <button onClick={resetMatch} className="p-2 bg-gray-600 text-white rounded">
               Reset
             </button>
