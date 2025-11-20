@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
+/**
+ * Rappresentazione di un match per la scoreboard.
+ */
 type Match = {
   id: string;
   home_score: number;
@@ -16,17 +19,19 @@ type Match = {
 export default function Scoreboard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  /** Traccia se deve essere mostrato un badge (GOAL o stato) */
+  /**
+   * Stato del badge: se presente contiene l'id del match,
+   * il testo da mostrare e la classe di colore.
+   */
   const [badge, setBadge] = useState<{ id: string; text: string; color: string } | null>(null);
 
-  // Ref per i match correnti (necessario per confrontare punteggi/stati al polling)
+  // Ref per confrontare i dati precedenti (score e status)
   const matchesRef = useRef<Match[]>(matches);
   useEffect(() => {
     matchesRef.current = matches;
   }, [matches]);
 
   useEffect(() => {
-    // Funzione di fetch dei match con normalizzazione dei dati
     const fetchMatches = async () => {
       const { data, error } = await supabase
         .from('matches')
@@ -47,6 +52,7 @@ export default function Scoreboard() {
         return;
       }
       if (data) {
+        // Normalizza i dati e converte gli ID in stringa
         const processed: Match[] = (data as any[]).map((m) => ({
           id: String(m.id),
           home_score: m.home_score,
@@ -57,7 +63,7 @@ export default function Scoreboard() {
           away_team: m.away_team ?? { name: '', logo_url: '' },
         }));
 
-        // Controlla se è cambiato il punteggio o lo stato
+        // Controlla se è cambiato punteggio o stato rispetto ai valori memorizzati
         let badgeInfo: { id: string; text: string; color: string } | null = null;
         processed.forEach((newMatch) => {
           const prev = matchesRef.current.find((m) => m.id === newMatch.id);
@@ -78,17 +84,18 @@ export default function Scoreboard() {
         setMatches(processed);
         if (badgeInfo) {
           setBadge(badgeInfo);
+          // Nasconde il badge dopo 3 secondi
           setTimeout(() => setBadge(null), 3000);
         }
       }
       setLoading(false);
     };
 
-    // Fetch iniziale e polling ogni 5 secondi
+    // Primo fetch e polling periodico
     fetchMatches();
     const intervalId = setInterval(fetchMatches, 5000);
 
-    // Subscription realtime per gli UPDATE
+    // Sottoscrizione realtime agli UPDATE della tabella matches
     const subscription = supabase
       .from('matches')
       .on('UPDATE', (payload) => {
@@ -96,11 +103,17 @@ export default function Scoreboard() {
         setMatches((prev) =>
           prev.map((match) =>
             match.id === updatedId
-              ? { ...match, home_score: payload.new.home_score, away_score: payload.new.away_score, status: payload.new.status }
+              ? {
+                  ...match,
+                  home_score: payload.new.home_score,
+                  away_score: payload.new.away_score,
+                  status: payload.new.status,
+                }
               : match
           )
         );
-        // Decidi quale badge mostrare (GOAL se cambia il punteggio, altrimenti stato)
+
+        // Determina se mostrare GOAL o un badge di stato
         const prevMatch = matchesRef.current.find((m) => m.id === updatedId);
         let badgeInfo: { id: string; text: string; color: string } | null = null;
         if (prevMatch) {
