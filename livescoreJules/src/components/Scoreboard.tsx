@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
+/**
+ * Match type for the scoreboard component.
+ */
 type Match = {
   id: string;
   home_score: number;
@@ -17,7 +20,9 @@ type Match = {
 export default function Scoreboard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  // Badge state (shows "GOAL" when a score changes)
   const [badge, setBadge] = useState<{ id: string; text: string; color: string } | null>(null);
+  // Ref to hold previous matches for comparison
   const matchesRef = useRef<Match[]>(matches);
 
   useEffect(() => {
@@ -25,10 +30,12 @@ export default function Scoreboard() {
   }, [matches]);
 
   useEffect(() => {
+    // Fetch matches and normalize data
     const fetchMatches = async () => {
       const { data, error } = await supabase
         .from('matches')
-        .select(`
+        .select(
+          `
           id,
           start_time,
           status,
@@ -37,7 +44,8 @@ export default function Scoreboard() {
           competition:competitions (name),
           home_team:teams!matches_home_team_id_fkey (name, logo_url),
           away_team:teams!matches_away_team_id_fkey (name, logo_url)
-        `)
+        `
+        )
         .order('start_time', { ascending: true });
 
       if (error) {
@@ -56,14 +64,12 @@ export default function Scoreboard() {
           away_team: m.away_team ?? { name: '', logo_url: '' },
         }));
 
+        // Determine if a score change occurred to trigger the badge
         let goalBadge: { id: string; text: string; color: string } | null = null;
         processed.forEach((newMatch) => {
           const prev = matchesRef.current.find((m) => m.id === newMatch.id);
           if (prev) {
-            if (
-              prev.home_score !== newMatch.home_score ||
-              prev.away_score !== newMatch.away_score
-            ) {
+            if (prev.home_score !== newMatch.home_score || prev.away_score !== newMatch.away_score) {
               goalBadge = { id: newMatch.id, text: 'GOAL', color: 'bg-green-500' };
             }
           }
@@ -79,8 +85,10 @@ export default function Scoreboard() {
     };
 
     fetchMatches();
+    // Polling every 5 seconds
     const intervalId = setInterval(fetchMatches, 5000);
 
+    // Realtime subscription using Supabase channel
     const channel = supabase
       .channel('realtime-matches')
       .on(
@@ -180,23 +188,22 @@ export default function Scoreboard() {
                 <span className="font-bold text-lg ml-2">{match.away_team.name}</span>
               </div>
             </div>
-            {/* Colore dello stato in base al suo contenuto */}
             <div
               className={`text-center mt-2 text-sm font-semibold capitalize ${
-          match.status.toLowerCase().includes('live')
-          ? 'text-yellow-500'
-          : match.status.toLowerCase() === 'halftime'
-          ? 'text-orange-500'
-          : match.status.toLowerCase() === 'final'
-          ? 'text-red-500'
-          : match.status.toLowerCase() === 'sospesa'
-          ? 'text-purple-500'
-          : match.status.toLowerCase() === 'rinviata'
-          ? 'text-gray-500'
-          : match.status.toLowerCase() === 'in programma' ||
-            match.status.toLowerCase() === 'scheduled'
-          ? 'text-blue-500'
-          : 'text-gray-600''
+                match.status.toLowerCase().includes('live')
+                  ? 'text-yellow-500'
+                  : match.status.toLowerCase() === 'halftime'
+                  ? 'text-orange-500'
+                  : match.status.toLowerCase() === 'final'
+                  ? 'text-red-500'
+                  : match.status.toLowerCase() === 'sospesa'
+                  ? 'text-purple-500'
+                  : match.status.toLowerCase() === 'rinviata'
+                  ? 'text-gray-500'
+                  : match.status.toLowerCase() === 'in programma' ||
+                    match.status.toLowerCase() === 'scheduled'
+                  ? 'text-blue-500'
+                  : 'text-gray-600'
               }`}
             >
               {match.status}
