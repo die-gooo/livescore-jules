@@ -1,41 +1,32 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
-/**
- * Shape of a match used within the scoreboard.
- *
- * Supabase ritorna i dati relazionati (competition, home_team, away_team)
- * sotto forma di array di un solo elemento. Per comodità normalizziamo
- * questi campi in oggetti singoli quando carichiamo i dati.
- */
 type Match = {
-  // Conservo l’id come stringa così da evitare problemi di confronto con numeri
   id: string;
   home_score: number;
   away_score: number;
   status: string;
-  competition: {
-    name: string;
-  };
-  home_team: {
-    name: string;
-    logo_url: string;
-  };
-  away_team: {
-    name: string;
-    logo_url: string;
-  };
+  competition: { name: string };
+  home_team: { name: string; logo_url: string };
+  away_team: { name: string; logo_url: string };
 };
 
 export default function Scoreboard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updatedMatchId, setUpdatedMatchId] = useState<string | null>(null);
+  /** Traccia se deve essere mostrato un badge (GOAL o stato) */
+  const [badge, setBadge] = useState<{ id: string; text: string; color: string } | null>(null);
+
+  // Ref per i match correnti (necessario per confrontare punteggi/stati al polling)
+  const matchesRef = useRef<Match[]>(matches);
+  useEffect(() => {
+    matchesRef.current = matches;
+  }, [matches]);
 
   useEffect(() => {
-    // Recupera e normalizza i match iniziali
+    // Funzione di fetch dei match con normalizzazione dei dati
     const fetchMatches = async () => {
       const { data, error } = await supabase
         .from('matches')
@@ -53,56 +44,92 @@ export default function Scoreboard() {
 
       if (error) {
         console.error('Error fetching matches:', error);
-      } else if (data) {
-        // Converto array in oggetti singoli e id in stringa
+        return;
+      }
+      if (data) {
         const processed: Match[] = (data as any[]).map((m) => ({
           id: String(m.id),
           home_score: m.home_score,
           away_score: m.away_score,
           status: m.status,
-          competition: Array.isArray(m.competition) ? (m.competition[0] ?? { name: '' }) : { name: '' },
-          home_team: Array.isArray(m.home_team) ? (m.home_team[0] ?? { name: '', logo_url: '' }) : { name: '', logo_url: '' },
-          away_team: Array.isArray(m.away_team) ? (m.away_team[0] ?? { name: '', logo_url: '' }) : { name: '', logo_url: '' },
+          competition: m.competition ?? { name: '' },
+          home_team: m.home_team ?? { name: '', logo_url: '' },
+          away_team: m.away_team ?? { name: '', logo_url: '' },
         }));
+
+        // Controlla se è cambiato il punteggio o lo stato
+        let badgeInfo: { id: string; text: string; color: string } | null = null;
+        processed.forEach((newMatch) => {
+          const prev = matchesRef.current.find((m) => m.id === newMatch.id);
+          if (prev) {
+            if (prev.home_score !== newMatch.home_score || prev.away_score !== newMatch.away_score) {
+              badgeInfo = { id: newMatch.id, text: 'GOAL', color: 'bg-green-500' };
+            } else if (prev.status !== newMatch.status) {
+              const statusText = String(newMatch.status).toUpperCase();
+              let colorClass = 'bg-gray-500';
+              if (statusText === 'LIVE') colorClass = 'bg-yellow-500';
+              if (statusText === 'HALFTIME') colorClass = 'bg-orange-500';
+              if (statusText === 'FINAL') colorClass = 'bg-red-500';
+              badgeInfo = { id: newMatch.id, text: statusText, color: colorClass };
+            }
+          }
+        });
+
         setMatches(processed);
+        if (badgeInfo) {
+          setBadge(badgeInfo);
+          setTimeout(() => setBadge(null), 3000);
+        }
       }
       setLoading(false);
     };
 
+    // Fetch iniziale e polling ogni 5 secondi
     fetchMatches();
+    const intervalId = setInterval(fetchMatches, 5000);
 
-    // Configura la sottoscrizione realtime per gli aggiornamenti
-    const channel = supabase
-      .channel('realtime-matches')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'matches' },
-        (payload) => {
-          // Converto l’ID a stringa per confronto sicuro
-          const updatedId = String(payload.new.id);
-
-          setMatches((prevMatches) =>
-            prevMatches.map((match) =>
-              match.id === updatedId
-                ? {
-                    ...match,
-                    home_score: payload.new.home_score,
-                    away_score: payload.new.away_score,
-                    status: payload.new.status,
-                  }
-                : match
-            )
-          );
-          // Attiva il badge GOAL per tre secondi
-          setUpdatedMatchId(updatedId);
-          setTimeout(() => setUpdatedMatchId(null), 3000);
+    // Subscription realtime per gli UPDATE
+    const subscription = supabase
+      .from('matches')
+      .on('UPDATE', (payload) => {
+        const updatedId = String(payload.new.id);
+        setMatches((prev) =>
+          prev.map((match) =>
+            match.id === updatedId
+              ? { ...match, home_score: payload.new.home_score, away_score: payload.new.away_score, status: payload.new.status }
+              : match
+          )
+        );
+        // Decidi quale badge mostrare (GOAL se cambia il punteggio, altrimenti stato)
+        const prevMatch = matchesRef.current.find((m) => m.id === updatedId);
+        let badgeInfo: { id: string; text: string; color: string } | null = null;
+        if (prevMatch) {
+          if (prevMatch.home_score !== payload.new.home_score || prevMatch.away_score !== payload.new.away_score) {
+            badgeInfo = { id: updatedId, text: 'GOAL', color: 'bg-green-500' };
+          } else if (prevMatch.status !== payload.new.status) {
+            const statusText = String(payload.new.status).toUpperCase();
+            let colorClass = 'bg-gray-500';
+            if (statusText === 'LIVE') colorClass = 'bg-yellow-500';
+            if (statusText === 'HALFTIME') colorClass = 'bg-orange-500';
+            if (statusText === 'FINAL') colorClass = 'bg-red-500';
+            badgeInfo = { id: updatedId, text: statusText, color: colorClass };
+          }
         }
-      )
+        if (badgeInfo) {
+          setBadge(badgeInfo);
+          setTimeout(() => setBadge(null), 3000);
+        }
+      })
       .subscribe();
 
-    // Pulizia alla dismissione del componente
+    // Cleanup
     return () => {
-      supabase.removeChannel(channel);
+      try {
+        subscription.unsubscribe?.();
+      } catch (_) {
+        (supabase as any).removeChannel?.(subscription);
+      }
+      clearInterval(intervalId);
     };
   }, []);
 
@@ -115,9 +142,9 @@ export default function Scoreboard() {
       {matches.length > 0 ? (
         matches.map((match) => (
           <div key={match.id} className="border p-4 my-2 rounded-lg relative shadow-sm bg-white">
-            {updatedMatchId === match.id && (
-              <span className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
-                GOAL
+            {badge && badge.id === match.id && (
+              <span className={`absolute top-2 right-2 ${badge.color} text-white text-xs px-2 py-1 rounded-full animate-pulse`}>
+                {badge.text}
               </span>
             )}
             <div className="text-sm text-gray-500 text-center mb-2">{match.competition.name}</div>
