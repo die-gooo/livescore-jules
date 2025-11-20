@@ -111,7 +111,9 @@ export default function AdminPage() {
     }
   };
 
-  const updateStatus = async (status: 'live' | 'halftime' | 'final' | 'in programma') => {
+  const updateStatus = async (
+    status: 'live' | 'live 1°t' | 'live 2°t' | 'halftime' | 'final' | 'in programma'
+  ) => {
     if (!match) return;
     const { error } = await supabase.from('matches').update({ status }).eq('id', match.id);
     if (error) {
@@ -130,10 +132,10 @@ export default function AdminPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-24">
       <div className="w-full flex justify-end">
-        <button onClick={handleLogout} className="p-2 bg-red-500 text-white rounded">
-          Logout
-        </button>
-      </div>
+      <button onClick={handleLogout} className="p-2 bg-red-500 text-white rounded">
+        Logout
+      </button>
+    </div>
       <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
       {match ? (
         <div className="border p-4 rounded-lg">
@@ -157,17 +159,20 @@ export default function AdminPage() {
             <button onClick={() => decrementScore('away')} className="p-2 bg-purple-500 text-white rounded">
               -1 Away Goal
             </button>
-            <button onClick={() => updateStatus('live')} className="p-2 bg-yellow-500 text-white rounded">
-              Live
+            <button onClick={() => updateStatus('live 1°t')} className="p-2 bg-yellow-500 text-white rounded">
+              Live 1°T
             </button>
-            <button onClick={() => updateStatus('in programma')} className="p-2 bg-blue-500 text-white rounded">
-              In programma
+            <button onClick={() => updateStatus('live 2°t')} className="p-2 bg-yellow-500 text-white rounded">
+              Live 2°T
             </button>
             <button onClick={() => updateStatus('halftime')} className="p-2 bg-orange-500 text-white rounded">
               Halftime
             </button>
             <button onClick={() => updateStatus('final')} className="p-2 bg-red-500 text-white rounded">
               Final
+            </button>
+            <button onClick={() => updateStatus('in programma')} className="p-2 bg-blue-500 text-white rounded">
+              In programma
             </button>
             <button onClick={resetMatch} className="p-2 bg-gray-600 text-white rounded">
               Reset
