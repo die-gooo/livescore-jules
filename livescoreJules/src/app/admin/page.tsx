@@ -64,8 +64,33 @@ export default function AdminPage() {
 
     if (matchError) {
       console.error("Error fetching match:", matchError);
-    } else {
-      setMatch(matchData as MatchWithTeams);
+      setLoading(false);
+      return;
+    }
+
+    if (matchData) {
+      const raw: any = matchData;
+
+      const rawHome = Array.isArray(raw.home_team) ? raw.home_team[0] : raw.home_team;
+      const rawAway = Array.isArray(raw.away_team) ? raw.away_team[0] : raw.away_team;
+
+      const normalized: MatchWithTeams = {
+        id: raw.id,
+        start_time: raw.start_time ?? null,
+        status: raw.status ?? "in programma",
+        home_score: raw.home_score ?? 0,
+        away_score: raw.away_score ?? 0,
+        home_team: {
+          name: rawHome?.name ?? "",
+          logo_url: rawHome?.logo_url ?? null,
+        },
+        away_team: {
+          name: rawAway?.name ?? "",
+          logo_url: rawAway?.logo_url ?? null,
+        },
+      };
+
+      setMatch(normalized);
     }
 
     setLoading(false);
@@ -231,7 +256,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Tabs (solo UI, per ora sempre Live attivo) */}
+          {/* Tabs (solo UI) */}
           <div className="flex gap-8 border-b border-[#3b4754] px-4">
             <button className="flex flex-col items-center justify-center border-b-[3px] border-b-sky-500 pb-[13px] pt-4 text-sky-500">
               <p className="text-sm font-bold tracking-[0.015em]">Live</p>
