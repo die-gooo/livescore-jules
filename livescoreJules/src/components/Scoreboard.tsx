@@ -87,7 +87,6 @@ export default function Scoreboard() {
           away_team: m.away_team ?? { name: "", logo_url: null },
         }));
 
-        // rileva GOAL rispetto allo stato precedente
         let goalBadge: { id: string; text: string; color: string } | null = null;
         processed.forEach((newMatch) => {
           const prev = matchesRef.current.find((m) => m.id === newMatch.id);
@@ -162,95 +161,95 @@ export default function Scoreboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050816] text-white flex flex-col">
-      {/* HEADER */}
-      <header className="sticky top-0 z-20 border-b border-slate-800 bg-gradient-to-b from-[#050816] to-[#050816]/95">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+    <main className="min-h-screen bg-[#050816] text-white">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 flex flex-col gap-4">
+        {/* HEADER */}
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
               <span className="text-2xl">🏆</span>
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                Live Scoreboard
+                Live scoreboard
               </span>
-              <h1 className="text-base font-semibold leading-tight">
+              <h1 className="text-xl sm:text-2xl font-semibold leading-tight">
                 Grand Championship
               </h1>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* LISTA MATCH */}
-      <section className="flex-1 mx-auto w-full max-w-5xl px-4 py-4 space-y-4">
-        {matches.length === 0 ? (
-          <p className="text-center text-sm text-slate-400">
-            Nessuna partita in programma.
-          </p>
-        ) : (
-          matches.map((match) => (
-            <article
-              key={match.id}
-              className="relative flex flex-col gap-3 rounded-2xl bg-[#0b1015] border border-slate-800/70 p-4 shadow-sm"
-            >
-              {/* Badge GOAL */}
-              {badge && badge.id === match.id && (
-                <span className="absolute -top-2 right-4 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse bg-emerald-500">
-                  {badge.text}
-                </span>
-              )}
-
-              {/* Riga stato + competizione */}
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
-                    {match.competition.name || "Match"}
+        {/* LISTA MATCH */}
+        <section className="flex-1 space-y-4">
+          {matches.length === 0 ? (
+            <p className="text-center text-sm text-slate-400">
+              Nessuna partita in programma.
+            </p>
+          ) : (
+            matches.map((match) => (
+              <article
+                key={match.id}
+                className="relative mx-auto w-full max-w-md sm:max-w-lg md:max-w-2xl rounded-2xl bg-[#0b1015] border border-slate-800/70 p-4 sm:p-5 shadow-sm"
+              >
+                {/* Badge GOAL */}
+                {badge && badge.id === match.id && (
+                  <span className="absolute -top-2 right-4 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse bg-emerald-500">
+                    {badge.text}
                   </span>
-                  <span className="text-[11px] text-slate-500">
-                    {formatStartTime(match.start_time)}
-                  </span>
-                </div>
-                <div
-                  className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${getStatusColorClass(
-                    match.status
-                  )} border-slate-700 bg-slate-900/60`}
-                >
-                  {match.status}
-                </div>
-              </div>
+                )}
 
-              {/* Riga principale: Home – score – Away */}
-              <div className="flex items-center gap-4">
-                {/* Home */}
-                <div className="flex w-1/3 flex-col items-end gap-1 text-right">
-                  <span className="text-sm font-semibold text-slate-50 line-clamp-1">
-                    {match.home_team.name}
-                  </span>
-                  <span className="text-[11px] text-slate-400">Home</span>
+                {/* Riga stato + competizione */}
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
+                      {match.competition.name || "Match"}
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      {formatStartTime(match.start_time)}
+                    </span>
+                  </div>
+                  <div
+                    className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${getStatusColorClass(
+                      match.status
+                    )} border-slate-700 bg-slate-900/60`}
+                  >
+                    {match.status}
+                  </div>
                 </div>
 
-                {/* Score */}
-                <div className="flex w-1/3 flex-col items-center gap-1">
-                  <p className="text-3xl font-extrabold tracking-tight tabular-nums text-slate-50">
-                    {match.home_score}
-                    <span className="mx-1 text-2xl text-slate-500">-</span>
-                    {match.away_score}
-                  </p>
-                </div>
+                {/* Riga principale: Home – score – Away */}
+                <div className="flex items-center gap-4">
+                  {/* Home */}
+                  <div className="flex w-1/3 flex-col items-end gap-1 text-right">
+                    <span className="text-sm font-semibold text-slate-50 line-clamp-1">
+                      {match.home_team.name}
+                    </span>
+                    <span className="text-[11px] text-slate-400">Home</span>
+                  </div>
 
-                {/* Away */}
-                <div className="flex w-1/3 flex-col items-start gap-1 text-left">
-                  <span className="text-sm font-semibold text-slate-50 line-clamp-1">
-                    {match.away_team.name}
-                  </span>
-                  <span className="text-[11px] text-slate-400">Away</span>
+                  {/* Score */}
+                  <div className="flex w-1/3 flex-col items-center gap-1">
+                    <p className="text-3xl font-extrabold tracking-tight tabular-nums text-slate-50">
+                      {match.home_score}
+                      <span className="mx-1 text-2xl text-slate-500">-</span>
+                      {match.away_score}
+                    </p>
+                  </div>
+
+                  {/* Away */}
+                  <div className="flex w-1/3 flex-col items-start gap-1 text-left">
+                    <span className="text-sm font-semibold text-slate-50 line-clamp-1">
+                      {match.away_team.name}
+                    </span>
+                    <span className="text-[11px] text-slate-400">Away</span>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))
-        )}
-      </section>
+              </article>
+            ))
+          )}
+        </section>
+      </div>
     </main>
   );
 }
