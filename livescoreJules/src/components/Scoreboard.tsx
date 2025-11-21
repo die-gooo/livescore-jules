@@ -19,7 +19,7 @@ export default function Scoreboard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [badge, setBadge] = useState<{ id: string; text: string; color: string } | null>(null);
-  const [selectedRound, setSelectedRound] = useState<string | "all">("all");
+  const [selectedRound, setSelectedRound] = useState<string | null>(null);
 
   const matchesRef = useRef<Match[]>(matches);
 
@@ -27,21 +27,10 @@ export default function Scoreboard() {
     matchesRef.current = matches;
   }, [matches]);
 
-  const getStatusColorClass = (status: string) => {
-    const s = status.toLowerCase();
-    if (s.includes("live")) return "text-amber-400";
-    if (s === "halftime") return "text-orange-400";
-    if (s === "final") return "text-red-400";
-    if (s === "sospesa") return "text-purple-300";
-    if (s === "rinviata") return "text-gray-400";
-    if (s === "in programma" || s === "scheduled") return "text-sky-400";
-    return "text-gray-400";
-  };
-
   const formatStartTime = (start: string | null) => {
-    if (!start) return "";
+    if (!start) return null;
     const d = new Date(start);
-    if (isNaN(d.getTime())) return "";
+    if (isNaN(d.getTime())) return null;
     const time = d.toLocaleTimeString("it-IT", {
       timeZone: "Europe/Rome",
       hour: "2-digit",
@@ -50,10 +39,10 @@ export default function Scoreboard() {
     const date = d.toLocaleDateString("it-IT", {
       timeZone: "Europe/Rome",
       day: "2-digit",
-      month: "2-digit",
+      month: "short",
       year: "numeric",
     });
-    return `ore ${time} – ${date}`;
+    return { time, date };
   };
 
   const computeBadgeFromScores = (
@@ -68,6 +57,29 @@ export default function Scoreboard() {
       return { text: "Reset", color: "bg-slate-500" };
     }
     return { text: "GOAL", color: "bg-emerald-500" };
+  };
+
+  const getStatusPill = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes("live") || s === "halftime" || s.includes("1t") || s.includes("2t")) {
+      return {
+        label: s === "halftime" ? "Halftime" : "Live",
+        className: "bg-red-500/10 text-red-500",
+        dot: true,
+      };
+    }
+    if (s === "final" || s === "ft") {
+      return {
+        label: "FT",
+        className: "bg-sky-500/10 text-sky-400",
+        dot: false,
+      };
+    }
+    return {
+      label: status || "Scheduled",
+      className: "bg-gray-500/10 text-gray-400",
+      dot: false,
+    };
   };
 
   useEffect(() => {
@@ -105,6 +117,19 @@ export default function Scoreboard() {
           home_team: m.home_team ?? { name: "", logo_url: null },
           away_team: m.away_team ?? { name: "", logo_url: null },
         }));
+
+        // set giornata di default alla prima disponibile
+        const allRounds = Array.from(
+          new Set(
+            processed
+              .map((m) => m.round)
+              .filter((r): r is string => !!r)
+          )
+        ).sort((a, b) => parseInt(a) - parseInt(b));
+
+        if (!selectedRound && allRounds.length > 0) {
+          setSelectedRound(allRounds[0]);
+        }
 
         let localBadge: { id: string; text: string; color: string } | null = null;
 
@@ -173,162 +198,171 @@ export default function Scoreboard() {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#050816] text-slate-300">
+      <main className="min-h-screen flex items-center justify-center bg-[#101922] text-slate-300">
         <span className="text-sm">Caricamento partite...</span>
       </main>
     );
   }
 
-  // calcolo giornate uniche
+  // giornate disponibili
   const rounds = Array.from(
-    new Set(matches.map((m) => m.round).filter((r): r is string => !!r))
+    new Set(
+      matches
+        .map((m) => m.round)
+        .filter((r): r is string => !!r)
+    )
   ).sort((a, b) => parseInt(a) - parseInt(b));
 
+  const currentRoundIndex = selectedRound ? rounds.indexOf(selectedRound) : -1;
+
   const visibleMatches =
-    selectedRound === "all"
-      ? matches
-      : matches.filter((m) => m.round === selectedRound);
+    selectedRound && currentRoundIndex !== -1
+      ? matches.filter((m) => m.round === selectedRound)
+      : matches;
+
+  const roundDate = (() => {
+    const dates = visibleMatches
+      .map((m) => (m.start_time ? new Date(m.start_time) : null))
+      .filter((d): d is Date => !!d && !isNaN(d.getTime()));
+    if (dates.length === 0) return "";
+    const first = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
+    return first.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  })();
+
+  const competitionName =
+    visibleMatches[0]?.competition.name || matches[0]?.competition.name || "Live Scoreboard";
+
+  const handlePrevRound = () => {
+    if (currentRoundIndex > 0) {
+      setSelectedRound(rounds[currentRoundIndex - 1]);
+    }
+  };
+
+  const handleNextRound = () => {
+    if (currentRoundIndex !== -1 && currentRoundIndex < rounds.length - 1) {
+      setSelectedRound(rounds[currentRoundIndex + 1]);
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-[#050816] text-white">
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 flex flex-col gap-4">
-        {/* HEADER */}
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
-              <span className="text-2xl">🏆</span>
+    <main className="min-h-screen bg-[#101922] text-gray-200">
+      <div className="relative flex min-h-screen w-full flex-col">
+        {/* HEADER STICKY */}
+        <header className="sticky top-0 z-10 border-b border-gray-800 bg-[#101922]/80 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-5xl items-center p-4">
+            <div className="text-sky-400 flex size-10 shrink-0 items-center justify-center">
+              <span className="text-3xl">🏆</span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                Live scoreboard
-              </span>
-              <h1 className="text-xl sm:text-2xl font-semibold leading-tight">
-                Grand Championship
-              </h1>
+            <h1 className="ml-2 text-xl font-bold leading-tight tracking-tight text-white">
+              {competitionName}
+            </h1>
+          </div>
+          <div className="mx-auto max-w-5xl">
+            <div className="flex items-center justify-between border-t border-gray-800 px-4 py-3">
+              <button
+                onClick={handlePrevRound}
+                disabled={currentRoundIndex <= 0}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800/70 text-gray-300 hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-gray-800 transition-colors"
+              >
+                ‹
+              </button>
+              <div className="flex flex-col items-center">
+                <h2 className="text-lg font-semibold text-white">
+                  {selectedRound ? Giornata ${selectedRound} : "Tutte le partite"}
+                </h2>
+                {roundDate && (
+                  <p className="text-xs text-gray-400">
+                    {roundDate}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={handleNextRound}
+                disabled={currentRoundIndex === -1 || currentRoundIndex >= rounds.length - 1}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800/70 text-gray-300 hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-gray-800 transition-colors"
+              >
+                ›
+              </button>
             </div>
           </div>
         </header>
 
-        {/* FILTRO GIORNATE */}
-        <section className="flex flex-col gap-2">
-          <span className="text-xs text-slate-400 mb-1">
-            Filtra per giornata
-          </span>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <button
-              onClick={() => setSelectedRound("all")}
-              className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium border ${
-                selectedRound === "all"
-                  ? "bg-sky-500 text-white border-sky-500"
-                  : "bg-transparent text-slate-300 border-slate-600"
-              }`}
-            >
-              Tutte
-            </button>
-            {rounds.map((round) => (
-              <button
-                key={round}
-                onClick={() => setSelectedRound(round)}
-                className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium border ${
-                  selectedRound === round
-                    ? "bg-sky-500 text-white border-sky-500"
-                    : "bg-transparent text-slate-300 border-slate-600"
-                }`}
-              >
-                Giornata {round}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* LISTA MATCH */}
-        <section className="flex-1 space-y-4">
+        {/* LISTA PARTITE DELLA GIORNATA */}
+        <main className="mx-auto w-full max-w-5xl flex-1 p-4 md:p-6">
           {visibleMatches.length === 0 ? (
-            <p className="text-center text-sm text-slate-400">
+            <p className="text-center text-sm text-gray-400">
               Nessuna partita trovata per questa giornata.
             </p>
           ) : (
-            visibleMatches.map((match) => (
-              <article
-                key={match.id}
-                className="relative mx-auto w-full max-w-md sm:max-w-lg md:max-w-2xl rounded-2xl bg-[#0b1015] border border-slate-800/70 p-4 sm:p-5 shadow-sm"
-              >
-                {badge && badge.id === match.id && (
-                  <span
-                    className={`absolute -top-2 right-4 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse ${badge.color}`}
-                  >
-                    {badge.text}
-                  </span>
-                )}
+            <div className="flex flex-col gap-4">
+              {visibleMatches.map((match) => {
+                const timeInfo = formatStartTime(match.start_time);
+                const statusPill = getStatusPill(match.status);
 
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
-                      {match.competition.name || "Match"} •{" "}
-                      {match.round ? `Giornata ${match.round}` : ""}
-                    </span>
-                    <span className="text-[11px] text-slate-500">
-                      {formatStartTime(match.start_time)}
-                    </span>
-                  </div>
+                return (
                   <div
-                    className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${getStatusColorClass(
-                      match.status
-                    )} border-slate-700 bg-slate-900/60`}
+                    key={match.id}
+                    className="relative flex items-center gap-4 rounded-xl bg-[#121925] p-4 shadow-sm transition-shadow hover:shadow-lg"
                   >
-                    {match.status}
-                  </div>
-                </div>
+                    {/* Badge GOAL / Reset */}
+                    {badge && badge.id === match.id && (
+                      <span
+                        className={absolute -top-2 right-3 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse ${badge.color}}
+                      >
+                        {badge.text}
+                      </span>
+                    )}
 
-                <div className="flex items-center gap-4">
-                  <div className="flex w-1/3 flex-col items-end gap-1 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="text-sm font-semibold text-slate-50 line-clamp-1">
+                    {/* Home */}
+                    <div className="flex w-1/3 flex-col items-end gap-2 text-right">
+                      <span className="text-base font-semibold text-white line-clamp-1">
                         {match.home_team.name}
                       </span>
-                      {match.home_team.logo_url && (
-                        <img
-                          src={match.home_team.logo_url}
-                          alt={match.home_team.name}
-                          className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-[#050816] object-contain border border-slate-800"
-                        />
-                      )}
+                      <span className="text-xs text-gray-400">Home</span>
                     </div>
-                    <span className="text-[11px] text-slate-400">Home</span>
-                  </div>
 
-                  <div className="flex w-1/3 flex-col items-center gap-1">
-                    <p className="text-3xl font-extrabold tracking-tight tabular-nums text-slate-50">
-                      {match.home_score}
-                      <span className="mx-1 text-2xl text-slate-500">-</span>
-                      {match.away_score}
-                    </p>
-                  </div>
-
-                  <div className="flex w-1/3 flex-col items-start gap-1 text-left">
-                    <div className="flex items-center justify-start gap-2">
-                      {match.away_team.logo_url && (
-                        <img
-                          src={match.away_team.logo_url}
-                          alt={match.away_team.name}
-                          className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-[#050816] object-contain border border-slate-800"
-                        />
-                      )}
-                      <span className="text-sm font-semibold text-slate-50 line-clamp-1">
-                        {match.away_team.name}
+                    {/* Center */}
+                    <div className="flex w-1/3 flex-col items-center justify-center gap-2">
+                      <div
+                        className={flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${statusPill.className}}
+                      >
+                        {statusPill.dot && (
+                          <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                        )}
+                        {statusPill.label}
+                      </div>
+                      <p className="text-4xl font-bold tracking-tighter text-white">
+                        {match.home_score}{" "}
+                        <span className="mx-1 text-3xl text-gray-400">-</span>
+                        {match.away_score}
+                      </p>
+                      <span className="text-xs text-gray-400">
+                        {timeInfo ? ${timeInfo.time} • ${timeInfo.date} : ""}
                       </span>
                     </div>
-                    <span className="text-[11px] text-slate-400">Away</span>
+
+                    {/* Away */}
+                    <div className="flex w-1/3 flex-col items-start gap-2 text-left">
+                      <span className="text-base font-semibold text-white line-clamp-1">
+                        {match.away_team.name}
+                      </span>
+                      <span className="text-xs text-gray-400">Away</span>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))
+                );
+              })}
+            </div>
           )}
-        </section>
+        </main>
       </div>
     </main>
   );
