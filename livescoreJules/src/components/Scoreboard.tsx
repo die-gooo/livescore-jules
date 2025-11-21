@@ -75,8 +75,15 @@ export default function Scoreboard() {
         dot: false,
       };
     }
+    if (s === "in programma" || s === "scheduled") {
+      return {
+        label: "In programma",
+        className: "bg-gray-500/10 text-gray-400",
+        dot: false,
+      };
+    }
     return {
-      label: status || "Scheduled",
+      label: status || "Altro",
       className: "bg-gray-500/10 text-gray-400",
       dot: false,
     };
@@ -118,16 +125,36 @@ export default function Scoreboard() {
           away_team: m.away_team ?? { name: "", logo_url: null },
         }));
 
-        const allRounds = Array.from(
-          new Set(
-            processed
-              .map((m) => m.round)
-              .filter((r): r is string => !!r)
-          )
-        ).sort((a, b) => parseInt(a) - parseInt(b));
+        // Giorni minimi per ogni giornata (serve a capire la "giornata corrente")
+        const roundDates: { [round: string]: Date } = {};
+        processed.forEach((m) => {
+          if (!m.round || !m.start_time) return;
+          const d = new Date(m.start_time);
+          if (isNaN(d.getTime())) return;
+          if (!roundDates[m.round] || d < roundDates[m.round]) {
+            roundDates[m.round] = d;
+          }
+        });
 
+        const allRounds = Object.keys(roundDates).sort((a, b) => {
+          const da = roundDates[a].getTime();
+          const db = roundDates[b].getTime();
+          return da - db;
+        });
+
+        // Seleziona automaticamente la giornata "corrente" in base alla data
         if (!selectedRound && allRounds.length > 0) {
-          setSelectedRound(allRounds[0]);
+          const today = new Date();
+          let chosen = allRounds[allRounds.length - 1]; // default: l'ultima
+          for (let i = 0; i < allRounds.length; i++) {
+            const r = allRounds[i];
+            const d = roundDates[r];
+            if (d >= today) {
+              chosen = r;
+              break;
+            }
+          }
+          setSelectedRound(chosen);
         }
 
         let localBadge: { id: string; text: string; color: string } | null = null;
@@ -139,7 +166,7 @@ export default function Scoreboard() {
             away_score: newMatch.away_score,
           });
           if (badgeInfo) {
-            localBadge = { id: newMatch.id, ...badgeInfo };
+            localBadge = { id: newMatch.id, text: badgeInfo.text, color: badgeInfo.color };
           }
         });
 
@@ -257,6 +284,13 @@ export default function Scoreboard() {
     }
   };
 
+  const roundLabel = (() => {
+    if (!selectedRound) return "Tutte le partite";
+    const lower = selectedRound.toLowerCase();
+    if (lower.indexOf("giornata") !== -1) return selectedRound;
+    return "Giornata " + selectedRound;
+  })();
+
   return (
     <main className="min-h-screen bg-[#101922] text-gray-200">
       <div className="relative flex min-h-screen w-full flex-col">
@@ -281,7 +315,7 @@ export default function Scoreboard() {
               </button>
               <div className="flex flex-col items-center">
                 <h2 className="text-lg font-semibold text-white">
-                  {selectedRound ? "Giornata " + selectedRound : "Tutte le partite"}
+                  {roundLabel}
                 </h2>
                 {roundDate && (
                   <p className="text-xs text-gray-400">
@@ -315,7 +349,7 @@ export default function Scoreboard() {
                 return (
                   <div
                     key={match.id}
-                    className="relative flex items-center gap-4 rounded-xl bg-[#121925] p-4 shadow-sm transition-shadow hover:shadow-lg"
+                    className="relative flex flex-col gap-3 rounded-xl bg-[#121925] p-4 shadow-sm transition-shadow hover:shadow-lg sm:flex-row sm:items-center sm:gap-4"
                   >
                     {/* Badge GOAL / Reset */}
                     {badge && badge.id === match.id && (
@@ -330,15 +364,24 @@ export default function Scoreboard() {
                     )}
 
                     {/* Home */}
-                    <div className="flex w-1/3 flex-col items-end gap-2 text-right">
-                      <span className="text-base font-semibold text-white line-clamp-1">
-                        {match.home_team.name}
-                      </span>
+                    <div className="flex w-full flex-row items-center justify-between gap-2 sm:w-1/3 sm:flex-col sm:items-end sm:justify-center sm:text-right">
+                      <div className="flex items-center gap-2 sm:justify-end">
+                        <span className="text-base font-semibold text-white">
+                          {match.home_team.name}
+                        </span>
+                        {match.home_team.logo_url && (
+                          <img
+                            src={match.home_team.logo_url}
+                            alt={match.home_team.name}
+                            className="h-8 w-8 rounded-full bg-[#050816] object-contain border border-slate-800"
+                          />
+                        )}
+                      </div>
                       <span className="text-xs text-gray-400">Home</span>
                     </div>
 
                     {/* Center */}
-                    <div className="flex w-1/3 flex-col items-center justify-center gap-2">
+                    <div className="flex w-full flex-col items-center justify-center gap-2 sm:w-1/3">
                       <div
                         className={
                           "flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider " +
@@ -361,10 +404,19 @@ export default function Scoreboard() {
                     </div>
 
                     {/* Away */}
-                    <div className="flex w-1/3 flex-col items-start gap-2 text-left">
-                      <span className="text-base font-semibold text-white line-clamp-1">
-                        {match.away_team.name}
-                      </span>
+                    <div className="flex w-full flex-row items-center justify-between gap-2 sm:w-1/3 sm:flex-col sm:items-start sm:justify-center sm:text-left">
+                      <div className="flex items-center gap-2">
+                        {match.away_team.logo_url && (
+                          <img
+                            src={match.away_team.logo_url}
+                            alt={match.away_team.name}
+                            className="h-8 w-8 rounded-full bg-[#050816] object-contain border border-slate-800"
+                          />
+                        )}
+                        <span className="text-base font-semibold text-white">
+                          {match.away_team.name}
+                        </span>
+                      </div>
                       <span className="text-xs text-gray-400">Away</span>
                     </div>
                   </div>
