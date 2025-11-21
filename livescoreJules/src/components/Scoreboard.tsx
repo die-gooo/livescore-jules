@@ -118,7 +118,6 @@ export default function Scoreboard() {
           away_team: m.away_team ?? { name: "", logo_url: null },
         }));
 
-        // set giornata di default alla prima disponibile
         const allRounds = Array.from(
           new Set(
             processed
@@ -209,7 +208,6 @@ export default function Scoreboard() {
     );
   }
 
-  // giornate disponibili
   const rounds = Array.from(
     new Set(
       matches
