@@ -312,13 +312,13 @@ export default function Scoreboard() {
                     className="relative flex items-center gap-4 rounded-xl bg-[#121925] p-4 shadow-sm transition-shadow hover:shadow-lg"
                   >
                     {/* Badge GOAL / Reset */}
-                    {badge && badge.id === match.id && (
-                      <span
-                        className={absolute -top-2 right-3 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse ${badge.color}}
-                      >
-                        {badge.text}
-                      </span>
-                    )}
+{badge && badge.id === match.id && (
+  <span
+    className={absolute -top-2 right-3 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse ${badge.color}}
+  >
+    {badge.text}
+  </span>
+)}
 
                     {/* Home */}
                     <div className="flex w-1/3 flex-col items-end gap-2 text-right">
