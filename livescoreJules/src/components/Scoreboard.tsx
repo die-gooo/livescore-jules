@@ -53,6 +53,22 @@ export default function Scoreboard() {
     return `ore ${time} – ${date}`;
   };
 
+  // Decide se mostrare GOAL o Reset in base ai punteggi
+  const computeBadgeFromScores = (
+    prev: { home_score: number; away_score: number } | undefined,
+    next: { home_score: number; away_score: number }
+  ): { text: string; color: string } | null => {
+    if (!prev) return null;
+    if (prev.home_score === next.home_score && prev.away_score === next.away_score) {
+      return null;
+    }
+    // Se dopo l'update il risultato è 0-0, consideriamolo un reset
+    if (next.home_score === 0 && next.away_score === 0) {
+      return { text: "Reset", color: "bg-slate-500" };
+    }
+    return { text: "GOAL", color: "bg-emerald-500" };
+  };
+
   useEffect(() => {
     const fetchMatches = async () => {
       const { data, error } = await supabase
@@ -87,22 +103,24 @@ export default function Scoreboard() {
           away_team: m.away_team ?? { name: "", logo_url: null },
         }));
 
-        let goalBadge: { id: string; text: string; color: string } | null = null;
+        let localBadge: { id: string; text: string; color: string } | null = null;
+
         processed.forEach((newMatch) => {
           const prev = matchesRef.current.find((m) => m.id === newMatch.id);
-          if (
-            prev &&
-            (prev.home_score !== newMatch.home_score ||
-              prev.away_score !== newMatch.away_score)
-          ) {
-            goalBadge = { id: newMatch.id, text: "GOAL", color: "bg-emerald-500" };
+          const badgeInfo = computeBadgeFromScores(prev, {
+            home_score: newMatch.home_score,
+            away_score: newMatch.away_score,
+          });
+          if (badgeInfo) {
+            localBadge = { id: newMatch.id, ...badgeInfo };
           }
         });
 
         setMatches(processed);
-        if (goalBadge) {
-          setBadge(goalBadge);
-          setTimeout(() => setBadge(null), 3000);
+
+        if (localBadge) {
+          setBadge(localBadge);
+          setTimeout(() => setBadge(null), 6000); // badge più longevo
         }
       }
 
@@ -118,8 +136,9 @@ export default function Scoreboard() {
         { event: "UPDATE", schema: "public", table: "matches" },
         (payload) => {
           const updatedId = String(payload.new.id);
+
           setMatches((prev) => {
-            const next = prev.map((match) =>
+            const nextMatches = prev.map((match) =>
               match.id === updatedId
                 ? {
                     ...match,
@@ -131,17 +150,18 @@ export default function Scoreboard() {
             );
 
             const prevMatch = prev.find((m) => m.id === updatedId);
-            if (
-              prevMatch &&
-              (prevMatch.home_score !== payload.new.home_score ||
-                prevMatch.away_score !== payload.new.away_score)
-            ) {
-              setBadge({ id: updatedId, text: "GOAL", color: "bg-emerald-500" });
-              setTimeout(() => setBadge(null), 3000);
+            const badgeInfo = computeBadgeFromScores(prevMatch, {
+              home_score: payload.new.home_score,
+              away_score: payload.new.away_score,
+            });
+
+            if (badgeInfo) {
+              setBadge({ id: updatedId, ...badgeInfo });
+              setTimeout(() => setBadge(null), 6000);
             }
 
-            matchesRef.current = next;
-            return next;
+            matchesRef.current = nextMatches;
+            return nextMatches;
           });
         }
       )
@@ -192,9 +212,11 @@ export default function Scoreboard() {
                 key={match.id}
                 className="relative mx-auto w-full max-w-md sm:max-w-lg md:max-w-2xl rounded-2xl bg-[#0b1015] border border-slate-800/70 p-4 sm:p-5 shadow-sm"
               >
-                {/* Badge GOAL */}
+                {/* Badge GOAL / Reset */}
                 {badge && badge.id === match.id && (
-                  <span className="absolute -top-2 right-4 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse bg-emerald-500">
+                  <span
+                    className={`absolute -top-2 right-4 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse ${badge.color}`}
+                  >
                     {badge.text}
                   </span>
                 )}
@@ -222,9 +244,18 @@ export default function Scoreboard() {
                 <div className="flex items-center gap-4">
                   {/* Home */}
                   <div className="flex w-1/3 flex-col items-end gap-1 text-right">
-                    <span className="text-sm font-semibold text-slate-50 line-clamp-1">
-                      {match.home_team.name}
-                    </span>
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-sm font-semibold text-slate-50 line-clamp-1">
+                        {match.home_team.name}
+                      </span>
+                      {match.home_team.logo_url && (
+                        <img
+                          src={match.home_team.logo_url}
+                          alt={match.home_team.name}
+                          className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-[#050816] object-contain border border-slate-800"
+                        />
+                      )}
+                    </div>
                     <span className="text-[11px] text-slate-400">Home</span>
                   </div>
 
@@ -239,9 +270,18 @@ export default function Scoreboard() {
 
                   {/* Away */}
                   <div className="flex w-1/3 flex-col items-start gap-1 text-left">
-                    <span className="text-sm font-semibold text-slate-50 line-clamp-1">
-                      {match.away_team.name}
-                    </span>
+                    <div className="flex items-center justify-start gap-2">
+                      {match.away_team.logo_url && (
+                        <img
+                          src={match.away_team.logo_url}
+                          alt={match.away_team.name}
+                          className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-[#050816] object-contain border border-slate-800"
+                        />
+                      )}
+                      <span className="text-sm font-semibold text-slate-50 line-clamp-1">
+                        {match.away_team.name}
+                      </span>
+                    </div>
                     <span className="text-[11px] text-slate-400">Away</span>
                   </div>
                 </div>
