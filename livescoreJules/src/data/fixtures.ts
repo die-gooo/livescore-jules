@@ -1,0 +1,1460 @@
+const fixtures = [
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 1",
+    "home_team": "Remole",
+    "away_team": "Atletico 2001",
+    "start_time": "2025-09-26T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 1",
+    "home_team": "Città di Massa",
+    "away_team": "San Giovanni",
+    "start_time": "2025-09-26T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 1",
+    "home_team": "Five To Five",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2025-09-26T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 1",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2025-09-26T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 1",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Midland Global Sport",
+    "start_time": "2025-09-26T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 1",
+    "home_team": "Monsummano",
+    "away_team": "Timec",
+    "start_time": "2025-09-26T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 1",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Cus Pisa",
+    "start_time": "2025-09-26T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 2",
+    "home_team": "Atletico 2001",
+    "away_team": "Città di Massa",
+    "start_time": "2025-10-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 2",
+    "home_team": "Cus Pisa",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2025-10-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 2",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2025-10-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 2",
+    "home_team": "Midland Global Sport",
+    "away_team": "Monsummano",
+    "start_time": "2025-10-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 2",
+    "home_team": "San Giovanni",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2025-10-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 2",
+    "home_team": "Timec",
+    "away_team": "Remole",
+    "start_time": "2025-10-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 2",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Five To Five",
+    "start_time": "2025-10-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 3",
+    "home_team": "Atletico 2001",
+    "away_team": "San Giovanni",
+    "start_time": "2025-10-10T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 3",
+    "home_team": "Remole",
+    "away_team": "Cus Pisa",
+    "start_time": "2025-10-10T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 3",
+    "home_team": "Città di Massa",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2025-10-10T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 3",
+    "home_team": "Five To Five",
+    "away_team": "Monsummano",
+    "start_time": "2025-10-10T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 3",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Midland Global Sport",
+    "start_time": "2025-10-10T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 3",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Timec",
+    "start_time": "2025-10-10T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 3",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2025-10-10T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 4",
+    "home_team": "Cus Pisa",
+    "away_team": "Città di Massa",
+    "start_time": "2025-10-17T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 4",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2025-10-17T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 4",
+    "home_team": "Midland Global Sport",
+    "away_team": "Five To Five",
+    "start_time": "2025-10-17T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 4",
+    "home_team": "Monsummano",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2025-10-17T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 4",
+    "home_team": "San Giovanni",
+    "away_team": "Remole",
+    "start_time": "2025-10-17T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 4",
+    "home_team": "Timec",
+    "away_team": "Atletico 2001",
+    "start_time": "2025-10-17T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 4",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2025-10-17T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 5",
+    "home_team": "Atletico 2001",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2025-10-24T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 5",
+    "home_team": "Remole",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2025-10-24T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 5",
+    "home_team": "Città di Massa",
+    "away_team": "Midland Global Sport",
+    "start_time": "2025-10-24T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 5",
+    "home_team": "Five To Five",
+    "away_team": "Timec",
+    "start_time": "2025-10-24T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 5",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2025-10-24T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 5",
+    "home_team": "San Giovanni",
+    "away_team": "Cus Pisa",
+    "start_time": "2025-10-24T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 5",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Monsummano",
+    "start_time": "2025-10-24T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 6",
+    "home_team": "Cus Pisa",
+    "away_team": "Atletico 2001",
+    "start_time": "2025-10-31T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 6",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Five To Five",
+    "start_time": "2025-10-31T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 6",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Città di Massa",
+    "start_time": "2025-10-31T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 6",
+    "home_team": "Midland Global Sport",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2025-10-31T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 6",
+    "home_team": "Monsummano",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2025-10-31T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 6",
+    "home_team": "Timec",
+    "away_team": "San Giovanni",
+    "start_time": "2025-10-31T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 6",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Remole",
+    "start_time": "2025-10-31T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 7",
+    "home_team": "Atletico 2001",
+    "away_team": "Midland Global Sport",
+    "start_time": "2025-11-07T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 7",
+    "home_team": "Cus Pisa",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2025-11-07T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 7",
+    "home_team": "Remole",
+    "away_team": "Monsummano",
+    "start_time": "2025-11-07T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 7",
+    "home_team": "Città di Massa",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2025-11-07T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 7",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Timec",
+    "start_time": "2025-11-07T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 7",
+    "home_team": "San Giovanni",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2025-11-07T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 7",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Five To Five",
+    "start_time": "2025-11-07T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 8",
+    "home_team": "Five To Five",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2025-11-14T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 8",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2025-11-14T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 8",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Atletico 2001",
+    "start_time": "2025-11-14T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 8",
+    "home_team": "Midland Global Sport",
+    "away_team": "Remole",
+    "start_time": "2025-11-14T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 8",
+    "home_team": "Monsummano",
+    "away_team": "Città di Massa",
+    "start_time": "2025-11-14T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 8",
+    "home_team": "Timec",
+    "away_team": "Cus Pisa",
+    "start_time": "2025-11-14T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 8",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "San Giovanni",
+    "start_time": "2025-11-14T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 9",
+    "home_team": "Atletico 2001",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2025-11-21T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 9",
+    "home_team": "Cus Pisa",
+    "away_team": "Midland Global Sport",
+    "start_time": "2025-11-21T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 9",
+    "home_team": "Remole",
+    "away_team": "Five To Five",
+    "start_time": "2025-11-21T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 9",
+    "home_team": "Città di Massa",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2025-11-21T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 9",
+    "home_team": "San Giovanni",
+    "away_team": "Monsummano",
+    "start_time": "2025-11-21T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 9",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2025-11-21T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 9",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Timec",
+    "start_time": "2025-11-21T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 10",
+    "home_team": "Five To Five",
+    "away_team": "Città di Massa",
+    "start_time": "2025-11-28T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 10",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2025-11-28T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 10",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Remole",
+    "start_time": "2025-11-28T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 10",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Cus Pisa",
+    "start_time": "2025-11-28T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 10",
+    "home_team": "Midland Global Sport",
+    "away_team": "San Giovanni",
+    "start_time": "2025-11-28T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 10",
+    "home_team": "Monsummano",
+    "away_team": "Atletico 2001",
+    "start_time": "2025-11-28T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 10",
+    "home_team": "Timec",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2025-11-28T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 11",
+    "home_team": "Atletico 2001",
+    "away_team": "Five To Five",
+    "start_time": "2025-12-05T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 11",
+    "home_team": "Cus Pisa",
+    "away_team": "Monsummano",
+    "start_time": "2025-12-05T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 11",
+    "home_team": "Remole",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2025-12-05T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 11",
+    "home_team": "Città di Massa",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2025-12-05T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 11",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Timec",
+    "start_time": "2025-12-05T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 11",
+    "home_team": "San Giovanni",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2025-12-05T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 11",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Midland Global Sport",
+    "start_time": "2025-12-05T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 12",
+    "home_team": "Città di Massa",
+    "away_team": "Remole",
+    "start_time": "2025-12-12T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 12",
+    "home_team": "Five To Five",
+    "away_team": "Cus Pisa",
+    "start_time": "2025-12-12T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 12",
+    "home_team": "Futsal Lucchese",
+    "away_team": "San Giovanni",
+    "start_time": "2025-12-12T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 12",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2025-12-12T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 12",
+    "home_team": "Midland Global Sport",
+    "away_team": "Timec",
+    "start_time": "2025-12-12T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 12",
+    "home_team": "Monsummano",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2025-12-12T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 12",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Atletico 2001",
+    "start_time": "2025-12-12T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 13",
+    "home_team": "Atletico 2001",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2025-12-19T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 13",
+    "home_team": "Cus Pisa",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2025-12-19T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 13",
+    "home_team": "Remole",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2025-12-19T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 13",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Midland Global Sport",
+    "start_time": "2025-12-19T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 13",
+    "home_team": "San Giovanni",
+    "away_team": "Five To Five",
+    "start_time": "2025-12-19T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 13",
+    "home_team": "Timec",
+    "away_team": "Città di Massa",
+    "start_time": "2025-12-19T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 13",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Monsummano",
+    "start_time": "2025-12-19T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 14",
+    "home_team": "Atletico 2001",
+    "away_team": "Remole",
+    "start_time": "2026-01-09T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 14",
+    "home_team": "San Giovanni",
+    "away_team": "Città di Massa",
+    "start_time": "2026-01-09T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 14",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Five To Five",
+    "start_time": "2026-01-09T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 14",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2026-01-09T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 14",
+    "home_team": "Midland Global Sport",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2026-01-09T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 14",
+    "home_team": "Timec",
+    "away_team": "Monsummano",
+    "start_time": "2026-01-09T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 14",
+    "home_team": "Cus Pisa",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2026-01-09T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 15",
+    "home_team": "Città di Massa",
+    "away_team": "Atletico 2001",
+    "start_time": "2026-01-16T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 15",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Cus Pisa",
+    "start_time": "2026-01-16T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 15",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2026-01-16T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 15",
+    "home_team": "Monsummano",
+    "away_team": "Midland Global Sport",
+    "start_time": "2026-01-16T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 15",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "San Giovanni",
+    "start_time": "2026-01-16T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 15",
+    "home_team": "Remole",
+    "away_team": "Timec",
+    "start_time": "2026-01-16T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 15",
+    "home_team": "Five To Five",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2026-01-16T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 16",
+    "home_team": "San Giovanni",
+    "away_team": "Atletico 2001",
+    "start_time": "2026-01-23T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 16",
+    "home_team": "Cus Pisa",
+    "away_team": "Remole",
+    "start_time": "2026-01-23T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 16",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Città di Massa",
+    "start_time": "2026-01-23T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 16",
+    "home_team": "Monsummano",
+    "away_team": "Five To Five",
+    "start_time": "2026-01-23T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 16",
+    "home_team": "Midland Global Sport",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2026-01-23T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 16",
+    "home_team": "Timec",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2026-01-23T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 16",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2026-01-23T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 17",
+    "home_team": "Città di Massa",
+    "away_team": "Cus Pisa",
+    "start_time": "2026-01-30T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 17",
+    "home_team": "Futsal Lucchese",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2026-01-30T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 17",
+    "home_team": "Five To Five",
+    "away_team": "Midland Global Sport",
+    "start_time": "2026-01-30T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 17",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Monsummano",
+    "start_time": "2026-01-30T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 17",
+    "home_team": "Remole",
+    "away_team": "San Giovanni",
+    "start_time": "2026-01-30T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 17",
+    "home_team": "Atletico 2001",
+    "away_team": "Timec",
+    "start_time": "2026-01-30T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 17",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2026-01-30T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 18",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Atletico 2001",
+    "start_time": "2026-02-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 18",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Remole",
+    "start_time": "2026-02-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 18",
+    "home_team": "Midland Global Sport",
+    "away_team": "Città di Massa",
+    "start_time": "2026-02-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 18",
+    "home_team": "Timec",
+    "away_team": "Five To Five",
+    "start_time": "2026-02-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 18",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2026-02-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 18",
+    "home_team": "Cus Pisa",
+    "away_team": "San Giovanni",
+    "start_time": "2026-02-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 18",
+    "home_team": "Monsummano",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2026-02-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 19",
+    "home_team": "Atletico 2001",
+    "away_team": "Cus Pisa",
+    "start_time": "2026-02-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 19",
+    "home_team": "Five To Five",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2026-02-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 19",
+    "home_team": "Città di Massa",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2026-02-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 19",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Midland Global Sport",
+    "start_time": "2026-02-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 19",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Monsummano",
+    "start_time": "2026-02-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 19",
+    "home_team": "San Giovanni",
+    "away_team": "Timec",
+    "start_time": "2026-02-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 19",
+    "home_team": "Remole",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2026-02-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 20",
+    "home_team": "Midland Global Sport",
+    "away_team": "Atletico 2001",
+    "start_time": "2026-02-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 20",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Cus Pisa",
+    "start_time": "2026-02-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 20",
+    "home_team": "Monsummano",
+    "away_team": "Remole",
+    "start_time": "2026-02-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 20",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Città di Massa",
+    "start_time": "2026-02-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 20",
+    "home_team": "Timec",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2026-02-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 20",
+    "home_team": "La Sorba Casciano",
+    "away_team": "San Giovanni",
+    "start_time": "2026-02-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 20",
+    "home_team": "Five To Five",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2026-02-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 21",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Five To Five",
+    "start_time": "2026-02-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 21",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2026-02-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 21",
+    "home_team": "Atletico 2001",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2026-02-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 21",
+    "home_team": "Remole",
+    "away_team": "Midland Global Sport",
+    "start_time": "2026-02-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 21",
+    "home_team": "Città di Massa",
+    "away_team": "Monsummano",
+    "start_time": "2026-02-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 21",
+    "home_team": "Cus Pisa",
+    "away_team": "Timec",
+    "start_time": "2026-02-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 21",
+    "home_team": "San Giovanni",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2026-02-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 22",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Atletico 2001",
+    "start_time": "2026-03-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 22",
+    "home_team": "Midland Global Sport",
+    "away_team": "Cus Pisa",
+    "start_time": "2026-03-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 22",
+    "home_team": "Five To Five",
+    "away_team": "Remole",
+    "start_time": "2026-03-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 22",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Città di Massa",
+    "start_time": "2026-03-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 22",
+    "home_team": "Monsummano",
+    "away_team": "San Giovanni",
+    "start_time": "2026-03-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 22",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2026-03-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 22",
+    "home_team": "Timec",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2026-03-06T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 23",
+    "home_team": "Città di Massa",
+    "away_team": "Five To Five",
+    "start_time": "2026-03-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 23",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2026-03-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 23",
+    "home_team": "Remole",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2026-03-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 23",
+    "home_team": "Cus Pisa",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2026-03-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 23",
+    "home_team": "San Giovanni",
+    "away_team": "Midland Global Sport",
+    "start_time": "2026-03-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 23",
+    "home_team": "Atletico 2001",
+    "away_team": "Monsummano",
+    "start_time": "2026-03-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 23",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Timec",
+    "start_time": "2026-03-13T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 24",
+    "home_team": "Five To Five",
+    "away_team": "Atletico 2001",
+    "start_time": "2026-03-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 24",
+    "home_team": "Monsummano",
+    "away_team": "Cus Pisa",
+    "start_time": "2026-03-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 24",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Remole",
+    "start_time": "2026-03-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 24",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Città di Massa",
+    "start_time": "2026-03-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 24",
+    "home_team": "Timec",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2026-03-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 24",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "San Giovanni",
+    "start_time": "2026-03-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 24",
+    "home_team": "Midland Global Sport",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2026-03-20T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 25",
+    "home_team": "Remole",
+    "away_team": "Città di Massa",
+    "start_time": "2026-03-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 25",
+    "home_team": "Cus Pisa",
+    "away_team": "Five To Five",
+    "start_time": "2026-03-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 25",
+    "home_team": "San Giovanni",
+    "away_team": "Futsal Lucchese",
+    "start_time": "2026-03-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 25",
+    "home_team": "Vigor Fucecchio",
+    "away_team": "Futsal Sangiovannese",
+    "start_time": "2026-03-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 25",
+    "home_team": "Timec",
+    "away_team": "Midland Global Sport",
+    "start_time": "2026-03-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 25",
+    "home_team": "La Sorba Casciano",
+    "away_team": "Monsummano",
+    "start_time": "2026-03-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 25",
+    "home_team": "Atletico 2001",
+    "away_team": "Virtus Poggibonsi",
+    "start_time": "2026-03-27T00:00:00+01:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 26",
+    "home_team": "Futsal Lucchese",
+    "away_team": "Atletico 2001",
+    "start_time": "2026-04-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 26",
+    "home_team": "Futsal Sangiovannese",
+    "away_team": "Cus Pisa",
+    "start_time": "2026-04-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 26",
+    "home_team": "Virtus Poggibonsi",
+    "away_team": "Remole",
+    "start_time": "2026-04-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 26",
+    "home_team": "Midland Global Sport",
+    "away_team": "La Sorba Casciano",
+    "start_time": "2026-04-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 26",
+    "home_team": "Five To Five",
+    "away_team": "San Giovanni",
+    "start_time": "2026-04-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 26",
+    "home_team": "Città di Massa",
+    "away_team": "Timec",
+    "start_time": "2026-04-03T00:00:00+02:00",
+    "venue": null
+  },
+  {
+    "competition": "Serie C1 2025/26",
+    "round": "Giornata 26",
+    "home_team": "Monsummano",
+    "away_team": "Vigor Fucecchio",
+    "start_time": "2026-04-03T00:00:00+02:00",
+    "venue": null
+  }
+]
+
+export default fixtures;
