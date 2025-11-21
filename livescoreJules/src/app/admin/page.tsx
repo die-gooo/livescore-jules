@@ -1,283 +1,401 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
-/*
- * Admin page for updating match scores and statuses.
- * Features:
- * - Sticky header with team names, scores, and current status.
- * - Horizontal carousel of control panels for goals, status updates, and reset.
- * - Supports new statuses: "in programma", "live 1°t", "live 2°t", "halftime", "final", "sospesa", "rinviata".
- * - Updates local state immediately after database operations to avoid stale values.
- */
+type MatchWithTeams = {
+  id: number;
+  start_time: string | null;
+  status: string;
+  home_score: number;
+  away_score: number;
+  home_team: { name: string; logo_url: string | null };
+  away_team: { name: string; logo_url: string | null };
+};
+
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [match, setMatch] = useState<any>(null);
+  const [match, setMatch] = useState<MatchWithTeams | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Fetch authenticated user
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
     };
     getUser();
   }, []);
 
-  // Fetch the match for the user's team
   const fetchMatch = async () => {
     if (!user) return;
-    // Get user's team id from profile
+
     const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('team_id')
-      .eq('id', user.id)
+      .from("user_profiles")
+      .select("team_id")
+      .eq("id", user.id)
       .single();
+
     if (profileError) {
-      console.error('Error fetching user profile:', profileError);
+      console.error("Error fetching user profile:", profileError);
       setLoading(false);
       return;
     }
-    // Get match where user team is home or away
+
     const { data: matchData, error: matchError } = await supabase
-      .from('matches')
+      .from("matches")
       .select(
-        `id, start_time, status, home_score, away_score,
-        home_team:teams!matches_home_team_id_fkey(name, logo_url),
-        away_team:teams!matches_home_team_id_fkey(name, logo_url)`
+        `
+        id,
+        start_time,
+        status,
+        home_score,
+        away_score,
+        home_team:teams!matches_home_team_id_fkey (name, logo_url),
+        away_team:teams!matches_away_team_id_fkey (name, logo_url)
+      `
       )
       .or(`home_team_id.eq.${profile.team_id},away_team_id.eq.${profile.team_id}`)
       .single();
+
     if (matchError) {
-      console.error('Error fetching match:', matchError);
+      console.error("Error fetching match:", matchError);
     } else {
-      setMatch(matchData);
+      setMatch(matchData as MatchWithTeams);
     }
+
     setLoading(false);
   };
 
-  // Fetch match once user is loaded
   useEffect(() => {
     if (user) {
       fetchMatch();
     }
   }, [user]);
 
-  // Score increment
-  const updateScore = async (team: 'home' | 'away') => {
-    if (!match) return;
-    const newScore = team === 'home' ? match.home_score + 1 : match.away_score + 1;
-    const scoreField = team === 'home' ? 'home_score' : 'away_score';
-    const { error } = await supabase
-      .from('matches')
-      .update({ [scoreField]: newScore })
-      .eq('id', match.id);
-    if (error) {
-      console.error(`Error updating ${team} score:`, error);
-    } else {
-      // Update local state immediately
-      setMatch((prev: any) => (prev && prev.id === match.id ? { ...prev, [scoreField]: newScore } : prev));
-      fetchMatch();
-    }
+  const formatStartTime = (start: string | null) => {
+    if (!start) return "";
+    const d = new Date(start);
+    if (isNaN(d.getTime())) return "";
+    const time = d.toLocaleTimeString("it-IT", {
+      timeZone: "Europe/Rome",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const date = d.toLocaleDateString("it-IT", {
+      timeZone: "Europe/Rome",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    return `ore ${time} – ${date}`;
   };
 
-  // Score decrement (not below 0)
-  const decrementScore = async (team: 'home' | 'away') => {
+  const updateScore = async (team: "home" | "away", delta: 1 | -1) => {
     if (!match) return;
-    const newScore = team === 'home'
-      ? Math.max(0, match.home_score - 1)
-      : Math.max(0, match.away_score - 1);
-    const scoreField = team === 'home' ? 'home_score' : 'away_score';
+
+    const field = team === "home" ? "home_score" : "away_score";
+    const current = team === "home" ? match.home_score : match.away_score;
+    const nextScore = Math.max(0, current + delta);
+
     const { error } = await supabase
-      .from('matches')
-      .update({ [scoreField]: newScore })
-      .eq('id', match.id);
+      .from("matches")
+      .update({ [field]: nextScore })
+      .eq("id", match.id);
+
     if (error) {
-      console.error(`Error decrementing ${team} score:`, error);
-    } else {
-      setMatch((prev: any) => (prev && prev.id === match.id ? { ...prev, [scoreField]: newScore } : prev));
-      fetchMatch();
+      console.error("Error updating score:", error);
+      return;
     }
+
+    setMatch((prev) =>
+      prev
+        ? {
+            ...prev,
+            [field]: nextScore,
+          }
+        : prev
+    );
   };
 
-  // Reset scores and set status to "in programma"
-  const resetMatch = async () => {
-    if (!match) return;
-    const { error } = await supabase
-      .from('matches')
-      .update({ home_score: 0, away_score: 0, status: 'in programma' })
-      .eq('id', match.id);
-    if (error) {
-      console.error('Error resetting match:', error);
-    } else {
-      setMatch((prev: any) =>
-        prev && prev.id === match.id ? { ...prev, home_score: 0, away_score: 0, status: 'in programma' } : prev
-      );
-      fetchMatch();
-    }
-  };
-
-  // Update match status
   const updateStatus = async (
-    status: 'live' | 'live 1°t' | 'live 2°t' | 'halftime' | 'final' | 'in programma' | 'sospesa' | 'rinviata'
+    status:
+      | "in programma"
+      | "live 1°t"
+      | "live 2°t"
+      | "halftime"
+      | "final"
+      | "sospesa"
+      | "rinviata"
   ) => {
     if (!match) return;
+
     const { error } = await supabase
-      .from('matches')
+      .from("matches")
       .update({ status })
-      .eq('id', match.id);
+      .eq("id", match.id);
+
     if (error) {
-      console.error('Error updating status:', error);
-    } else {
-      setMatch((prev: any) => (prev && prev.id === match.id ? { ...prev, status } : prev));
-      fetchMatch();
+      console.error("Error updating status:", error);
+      return;
     }
+
+    setMatch((prev) =>
+      prev
+        ? {
+            ...prev,
+            status,
+          }
+        : prev
+    );
   };
 
-  // Logout
+  const resetMatch = async () => {
+    if (!match) return;
+
+    const { error } = await supabase
+      .from("matches")
+      .update({ home_score: 0, away_score: 0, status: "in programma" })
+      .eq("id", match.id);
+
+    if (error) {
+      console.error("Error resetting match:", error);
+      return;
+    }
+
+    setMatch((prev) =>
+      prev
+        ? {
+            ...prev,
+            home_score: 0,
+            away_score: 0,
+            status: "in programma",
+          }
+        : prev
+    );
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
-  };
-
-  // Determine text color for status
-  const statusColor = (status: string): string => {
-    const lower = status.toLowerCase();
-    if (lower.includes('live')) return 'text-yellow-500';
-    if (lower === 'halftime') return 'text-orange-500';
-    if (lower === 'final') return 'text-red-500';
-    if (lower === 'sospesa') return 'text-purple-500';
-    if (lower === 'rinviata') return 'text-gray-500';
-    if (lower === 'in programma' || lower === 'scheduled') return 'text-blue-500';
-    return 'text-gray-600';
+    router.push("/login");
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#111418] text-slate-300">
+        <span className="text-sm">Caricamento dashboard...</span>
+      </main>
+    );
+  }
+
+  if (!match) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-[#111418] text-white">
+        <button
+          onClick={handleLogout}
+          className="absolute top-4 right-4 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold"
+        >
+          Logout
+        </button>
+        <h1 className="text-lg font-semibold mb-2">Match Admin</h1>
+        <p className="text-sm text-slate-400 text-center px-6">
+          Nessuna partita associata al tuo profilo.
+        </p>
+      </main>
+    );
   }
 
   return (
-    <main className="flex flex-col min-h-screen p-4">
-      <div className="flex justify-end mb-4">
-        <button onClick={handleLogout} className="p-2 bg-red-500 text-white rounded">
-          Logout
-        </button>
-      </div>
-      <h1 className="text-3xl font-bold text-center mb-4">Admin Dashboard</h1>
-      {match ? (
-        <div className="max-w-md w-full mx-auto">
-          {/* Sticky header with match info */}
-          <div className="sticky top-0 z-10 bg-white p-4 border rounded shadow-sm">
-            <h2 className="text-xl font-bold text-center mb-2">
-              {match.home_team.name} vs {match.away_team.name}
-            </h2>
-            <p className="text-center text-lg font-semibold mb-1">
-              {match.home_score} - {match.away_score}
-            </p>
-            <p className={"text-center text-sm font-semibold capitalize " + statusColor(match.status)}>
-              {match.status}
-            </p>
+    <main className="min-h-screen bg-[#111418] text-white flex flex-col items-center">
+      <div className="relative mx-auto flex h-auto min-h-screen w-full max-w-lg flex-col bg-[#111418]">
+        {/* HEADER STICKY */}
+        <div className="sticky top-0 z-10 bg-[#111418] pt-4">
+          <div className="flex items-center p-4 pb-2">
+            <div className="flex size-12 shrink-0 items-center justify-start text-white">
+              <span className="material-symbols-outlined">timer</span>
+            </div>
+            <h1 className="flex-1 text-center text-lg font-bold leading-tight tracking-[-0.015em]">
+              Match Admin
+            </h1>
+            <div className="flex w-12 items-center justify-end">
+              <button
+                onClick={handleLogout}
+                className="flex h-8 cursor-pointer items-center justify-center rounded-full bg-red-500 px-3 text-[11px] font-semibold"
+              >
+                Logout
+              </button>
+            </div>
           </div>
 
-          {/* Carousel of control panels */}
-          <div className="mt-4 flex overflow-x-auto gap-4 pb-4">
-            {/* Goals panel */}
-            <div className="min-w-[260px] border rounded-lg p-4 bg-gray-50 flex-shrink-0">
-              <h3 className="text-lg font-semibold mb-3 text-center">Aggiorna Goal</h3>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => updateScore('home')}
-                  className="py-2 px-3 bg-blue-500 text-white rounded w-full"
-                >
-                  +1 Home
-                </button>
-                <button
-                  onClick={() => decrementScore('home')}
-                  className="py-2 px-3 bg-purple-500 text-white rounded w-full"
-                >
-                  -1 Home
-                </button>
-                <button
-                  onClick={() => updateScore('away')}
-                  className="py-2 px-3 bg-blue-500 text-white rounded w-full"
-                >
-                  +1 Away
-                </button>
-                <button
-                  onClick={() => decrementScore('away')}
-                  className="py-2 px-3 bg-purple-500 text-white rounded w-full"
-                >
-                  -1 Away
-                </button>
+          {/* Tabs (solo UI, per ora sempre Live attivo) */}
+          <div className="flex gap-8 border-b border-[#3b4754] px-4">
+            <button className="flex flex-col items-center justify-center border-b-[3px] border-b-sky-500 pb-[13px] pt-4 text-sky-500">
+              <p className="text-sm font-bold tracking-[0.015em]">Live</p>
+            </button>
+            <button className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent pb-[13px] pt-4 text-[#9cabba]">
+              <p className="text-sm font-bold tracking-[0.015em]">Upcoming</p>
+            </button>
+            <button className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent pb-[13px] pt-4 text-[#9cabba]">
+              <p className="text-sm font-bold tracking-[0.015em]">Finished</p>
+            </button>
+          </div>
+        </div>
+
+        {/* CONTENUTO */}
+        <div className="flex-1 bg-[#182029] px-4 py-4 pb-6">
+          {/* Card match principale */}
+          <div className="flex flex-col gap-4 rounded-lg bg-[#111418] p-4">
+            {/* Riga titolo + stato */}
+            <div className="flex w-full items-start justify-between gap-4">
+              <div className="flex flex-1 items-start gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#283039] text-white">
+                  <span className="material-symbols-outlined">
+                    sports_soccer
+                  </span>
+                </div>
+                <div className="flex flex-1 flex-col justify-center">
+                  <p className="text-base font-medium">
+                    {match.home_team.name} vs {match.away_team.name}
+                  </p>
+                  <p className="text-xs text-[#9cabba]">
+                    {formatStartTime(match.start_time)}
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0">
+                <div className="flex h-7 items-center justify-center rounded-full bg-red-600/20 px-3">
+                  <p className="text-xs font-bold text-red-400 uppercase">
+                    {match.status}
+                  </p>
+                </div>
               </div>
             </div>
-            {/* Status panel */}
-            <div className="min-w-[260px] border rounded-lg p-4 bg-gray-50 flex-shrink-0">
-              <h3 className="text-lg font-semibold mb-3 text-center">Aggiorna Stato</h3>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => updateStatus('live 1°t')}
-                  className="py-2 px-3 bg-yellow-500 text-white rounded w-full"
-                >
-                  Live 1°T
-                </button>
-                <button
-                  onClick={() => updateStatus('live 2°t')}
-                  className="py-2 px-3 bg-yellow-500 text-white rounded w-full"
-                >
-                  Live 2°T
-                </button>
-                <button
-                  onClick={() => updateStatus('halftime')}
-                  className="py-2 px-3 bg-orange-500 text-white rounded w-full"
-                >
-                  Halftime
-                </button>
-                <button
-                  onClick={() => updateStatus('final')}
-                  className="py-2 px-3 bg-red-500 text-white rounded w-full"
-                >
-                  Final
-                </button>
-                <button
-                  onClick={() => updateStatus('in programma')}
-                  className="py-2 px-3 bg-blue-500 text-white rounded w-full"
-                >
-                  In programma
-                </button>
-                <button
-                  onClick={() => updateStatus('sospesa')}
-                  className="py-2 px-3 bg-purple-500 text-white rounded w-full"
-                >
-                  Sospesa
-                </button>
-                <button
-                  onClick={() => updateStatus('rinviata')}
-                  className="py-2 px-3 bg-gray-500 text-white rounded w-full"
-                >
-                  Rinviata
-                </button>
+
+            {/* Riga score centrale */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col items-start gap-1">
+                <span className="text-xs text-[#9cabba] uppercase">Home</span>
+                <span className="text-sm font-semibold">
+                  {match.home_team.name}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[10px] text-[#9cabba] uppercase">
+                  Score
+                </span>
+                <span className="text-3xl font-bold tracking-tight tabular-nums">
+                  {match.home_score}
+                  <span className="mx-1 text-2xl text-[#9cabba]">-</span>
+                  {match.away_score}
+                </span>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-xs text-[#9cabba] uppercase">Away</span>
+                <span className="text-sm font-semibold">
+                  {match.away_team.name}
+                </span>
               </div>
             </div>
-            {/* Reset panel */}
-            <div className="min-w-[260px] border rounded-lg p-4 bg-gray-50 flex-shrink-0">
-              <h3 className="text-lg font-semibold mb-3 text-center">Altre Azioni</h3>
+
+            {/* Controlli score */}
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              {/* Home score */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-white">
+                  Home score
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateScore("home", -1)}
+                    className="flex size-8 items-center justify-center rounded-md bg-[#283039] text-white hover:bg-[#3b4754]"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    readOnly
+                    value={match.home_score}
+                    className="w-full rounded-md border-0 bg-[#283039] px-3 py-2 text-center text-sm text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateScore("home", +1)}
+                    className="flex size-8 items-center justify-center rounded-md bg-[#283039] text-white hover:bg-[#3b4754]"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Away score */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-white">
+                  Away score
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateScore("away", -1)}
+                    className="flex size-8 items-center justify-center rounded-md bg-[#283039] text-white hover:bg-[#3b4754]"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    readOnly
+                    value={match.away_score}
+                    className="w-full rounded-md border-0 bg-[#283039] px-3 py-2 text-center text-sm text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateScore("away", +1)}
+                    className="flex size-8 items-center justify-center rounded-md bg-[#283039] text-white hover:bg-[#3b4754]"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Status + reset */}
+            <div className="flex flex-col gap-3 mt-2">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-white">
+                  Match status
+                </label>
+                <select
+                  value={match.status}
+                  onChange={(e) =>
+                    updateStatus(e.target.value as any)
+                  }
+                  className="w-full rounded-md border-0 bg-[#283039] p-2 text-sm text-white"
+                >
+                  <option value="in programma">In programma</option>
+                  <option value="live 1°t">Live 1°T</option>
+                  <option value="live 2°t">Live 2°T</option>
+                  <option value="halftime">Halftime</option>
+                  <option value="final">Final</option>
+                  <option value="sospesa">Sospesa</option>
+                  <option value="rinviata">Rinviata</option>
+                </select>
+              </div>
+
               <button
+                type="button"
                 onClick={resetMatch}
-                className="py-2 px-3 bg-gray-600 text-white rounded w-full"
+                className="w-full rounded-lg bg-[#283039] px-3 py-2 text-sm font-medium text-white hover:bg-[#3b4754]"
               >
-                Reset
+                Reset (0 - 0, In programma)
               </button>
             </div>
           </div>
         </div>
-      ) : (
-        <p>No match found for your team.</p>
-      )}
+      </div>
     </main>
   );
 }
