@@ -65,6 +65,7 @@ export async function GET(req: NextRequest) {
 
     const fixturesTyped = fixtures as Fixture[];
 
+    // 1) Competitions
     const competitionNames = Array.from(
       new Set(fixturesTyped.map((f) => f.competition))
     );
@@ -74,6 +75,7 @@ export async function GET(req: NextRequest) {
       competitionMap.set(name, id);
     }
 
+    // 2) Teams
     const teamNames = Array.from(
       new Set(fixturesTyped.flatMap((f) => [f.home_team, f.away_team]))
     );
@@ -83,6 +85,7 @@ export async function GET(req: NextRequest) {
       teamMap.set(name, id);
     }
 
+    // 3) Matches
     const matchesToInsert = fixturesTyped.map((f) => {
       const competitionId = competitionMap.get(f.competition);
       const homeTeamId = teamMap.get(f.home_team);
@@ -90,13 +93,13 @@ export async function GET(req: NextRequest) {
 
       if (!competitionId || !homeTeamId || !awayTeamId) {
         throw new Error(
-          Missing id for competition or teams in fixture: ${JSON.stringify(f)}
+          `Missing id for competition or teams in fixture: ${JSON.stringify(f)}`
         );
       }
 
       return {
         competition_id: competitionId,
-        round: f.round, // se non vuoi usare round, togli questa riga
+        round: f.round, // togli questa riga se non usi la colonna round
         home_team_id: homeTeamId,
         away_team_id: awayTeamId,
         start_time: f.start_time,
