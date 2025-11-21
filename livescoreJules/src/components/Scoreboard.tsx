@@ -61,7 +61,7 @@ export default function Scoreboard() {
 
   const getStatusPill = (status: string) => {
     const s = status.toLowerCase();
-    if (s.includes("live") || s === "halftime" || s.includes("1t") || s.includes("2t")) {
+    if (s.indexOf("live") !== -1 || s === "halftime" || s.indexOf("1t") !== -1 || s.indexOf("2t") !== -1) {
       return {
         label: s === "halftime" ? "Halftime" : "Live",
         className: "bg-red-500/10 text-red-500",
@@ -147,7 +147,9 @@ export default function Scoreboard() {
 
         if (localBadge) {
           setBadge(localBadge);
-          setTimeout(() => setBadge(null), 6000);
+          setTimeout(function () {
+            setBadge(null);
+          }, 6000);
         }
       }
 
@@ -183,8 +185,10 @@ export default function Scoreboard() {
             });
 
             if (badgeInfo) {
-              setBadge({ id: updatedId, ...badgeInfo });
-              setTimeout(() => setBadge(null), 6000);
+              setBadge({ id: updatedId, text: badgeInfo.text, color: badgeInfo.color });
+              setTimeout(function () {
+                setBadge(null);
+              }, 6000);
             }
 
             matchesRef.current = nextMatches;
@@ -237,7 +241,9 @@ export default function Scoreboard() {
   })();
 
   const competitionName =
-    visibleMatches[0]?.competition.name || matches[0]?.competition.name || "Live Scoreboard";
+    (visibleMatches[0] && visibleMatches[0].competition.name) ||
+    (matches[0] && matches[0].competition.name) ||
+    "Live Scoreboard";
 
   const handlePrevRound = () => {
     if (currentRoundIndex > 0) {
@@ -273,16 +279,16 @@ export default function Scoreboard() {
               >
                 ‹
               </button>
-<div className="flex flex-col items-center">
-  <h2 className="text-lg font-semibold text-white">
-    {selectedRound ? `Giornata ${selectedRound}` : "Tutte le partite"}
-  </h2>
-  {roundDate && (
-    <p className="text-xs text-gray-400">
-      {roundDate}
-    </p>
-  )}
-</div>
+              <div className="flex flex-col items-center">
+                <h2 className="text-lg font-semibold text-white">
+                  {selectedRound ? "Giornata " + selectedRound : "Tutte le partite"}
+                </h2>
+                {roundDate && (
+                  <p className="text-xs text-gray-400">
+                    {roundDate}
+                  </p>
+                )}
+              </div>
               <button
                 onClick={handleNextRound}
                 disabled={currentRoundIndex === -1 || currentRoundIndex >= rounds.length - 1}
@@ -312,13 +318,16 @@ export default function Scoreboard() {
                     className="relative flex items-center gap-4 rounded-xl bg-[#121925] p-4 shadow-sm transition-shadow hover:shadow-lg"
                   >
                     {/* Badge GOAL / Reset */}
-{badge && badge.id === match.id && (
-  <span
-    className={absolute -top-2 right-3 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse ${badge.color}}
-  >
-    {badge.text}
-  </span>
-)}
+                    {badge && badge.id === match.id && (
+                      <span
+                        className={
+                          "absolute -top-2 right-3 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse " +
+                          badge.color
+                        }
+                      >
+                        {badge.text}
+                      </span>
+                    )}
 
                     {/* Home */}
                     <div className="flex w-1/3 flex-col items-end gap-2 text-right">
@@ -331,7 +340,10 @@ export default function Scoreboard() {
                     {/* Center */}
                     <div className="flex w-1/3 flex-col items-center justify-center gap-2">
                       <div
-                        className={flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${statusPill.className}}
+                        className={
+                          "flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider " +
+                          statusPill.className
+                        }
                       >
                         {statusPill.dot && (
                           <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
@@ -339,12 +351,12 @@ export default function Scoreboard() {
                         {statusPill.label}
                       </div>
                       <p className="text-4xl font-bold tracking-tighter text-white">
-                        {match.home_score}{" "}
+                        {match.home_score}
                         <span className="mx-1 text-3xl text-gray-400">-</span>
                         {match.away_score}
                       </p>
                       <span className="text-xs text-gray-400">
-                        {timeInfo ? ${timeInfo.time} • ${timeInfo.date} : ""}
+                        {timeInfo ? timeInfo.time + " • " + timeInfo.date : ""}
                       </span>
                     </div>
 
