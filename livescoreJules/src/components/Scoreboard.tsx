@@ -78,7 +78,7 @@ export default function Scoreboard() {
     if (s === "in programma" || s === "scheduled") {
       return {
         label: "In programma",
-        className: "bg-gray-500/10 text-gray-400",
+        className: "bg-gray-500/10 text-gray-300",
         dot: false,
       };
     }
@@ -125,7 +125,6 @@ export default function Scoreboard() {
           away_team: m.away_team ?? { name: "", logo_url: null },
         }));
 
-        // Giorni minimi per ogni giornata (serve a capire la "giornata corrente")
         const roundDates: { [round: string]: Date } = {};
         processed.forEach((m) => {
           if (!m.round || !m.start_time) return;
@@ -142,10 +141,9 @@ export default function Scoreboard() {
           return da - db;
         });
 
-        // Seleziona automaticamente la giornata "corrente" in base alla data
         if (!selectedRound && allRounds.length > 0) {
           const today = new Date();
-          let chosen = allRounds[allRounds.length - 1]; // default: l'ultima
+          let chosen = allRounds[allRounds.length - 1];
           for (let i = 0; i < allRounds.length; i++) {
             const r = allRounds[i];
             const d = roundDates[r];
@@ -349,7 +347,7 @@ export default function Scoreboard() {
                 return (
                   <div
                     key={match.id}
-                    className="relative flex flex-col gap-3 rounded-xl bg-[#121925] p-4 shadow-sm transition-shadow hover:shadow-lg sm:flex-row sm:items-center sm:gap-4"
+                    className="relative rounded-xl bg-[#121925] p-4 shadow-sm transition-shadow hover:shadow-lg"
                   >
                     {/* Badge GOAL / Reset */}
                     {badge && badge.id === match.id && (
@@ -363,25 +361,8 @@ export default function Scoreboard() {
                       </span>
                     )}
 
-                    {/* Home */}
-                    <div className="flex w-full flex-row items-center justify-between gap-2 sm:w-1/3 sm:flex-col sm:items-end sm:justify-center sm:text-right">
-                      <div className="flex items-center gap-2 sm:justify-end">
-                        <span className="text-base font-semibold text-white">
-                          {match.home_team.name}
-                        </span>
-                        {match.home_team.logo_url && (
-                          <img
-                            src={match.home_team.logo_url}
-                            alt={match.home_team.name}
-                            className="h-8 w-8 rounded-full bg-[#050816] object-contain border border-slate-800"
-                          />
-                        )}
-                      </div>
-                      <span className="text-xs text-gray-400">Home</span>
-                    </div>
-
-                    {/* Center */}
-                    <div className="flex w-full flex-col items-center justify-center gap-2 sm:w-1/3">
+                    {/* Riga 1: status */}
+                    <div className="flex justify-center mb-2">
                       <div
                         className={
                           "flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider " +
@@ -393,19 +374,51 @@ export default function Scoreboard() {
                         )}
                         {statusPill.label}
                       </div>
-                      <p className="text-4xl font-bold tracking-tighter text-white">
-                        {match.home_score}
-                        <span className="mx-1 text-3xl text-gray-400">-</span>
-                        {match.away_score}
-                      </p>
+                    </div>
+
+                    {/* Riga 2: tempo e data */}
+                    <div className="flex justify-center mb-3">
                       <span className="text-xs text-gray-400">
                         {timeInfo ? timeInfo.time + " • " + timeInfo.date : ""}
                       </span>
                     </div>
 
-                    {/* Away */}
-                    <div className="flex w-full flex-row items-center justify-between gap-2 sm:w-1/3 sm:flex-col sm:items-start sm:justify-center sm:text-left">
-                      <div className="flex items-center gap-2">
+                    {/* Riga 3: squadre + punteggio */}
+                    <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      {/* Home */}
+                      <div className="flex items-center gap-2 sm:w-1/3">
+                        {match.home_team.logo_url && (
+                          <img
+                            src={match.home_team.logo_url}
+                            alt={match.home_team.name}
+                            className="h-8 w-8 rounded-full bg-[#050816] object-contain border border-slate-800"
+                          />
+                        )}
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-white">
+                            {match.home_team.name}
+                          </span>
+                          <span className="text-xs text-gray-400">Home</span>
+                        </div>
+                      </div>
+
+                      {/* Score */}
+                      <div className="flex flex-col items-center justify-center sm:w-1/3">
+                        <p className="text-3xl font-bold tracking-tighter text-white">
+                          {match.home_score}
+                          <span className="mx-1 text-2xl text-gray-400">-</span>
+                          {match.away_score}
+                        </p>
+                      </div>
+
+                      {/* Away */}
+                      <div className="flex items-center gap-2 justify-end sm:w-1/3">
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-semibold text-white text-right">
+                            {match.away_team.name}
+                          </span>
+                          <span className="text-xs text-gray-400">Away</span>
+                        </div>
                         {match.away_team.logo_url && (
                           <img
                             src={match.away_team.logo_url}
@@ -413,11 +426,7 @@ export default function Scoreboard() {
                             className="h-8 w-8 rounded-full bg-[#050816] object-contain border border-slate-800"
                           />
                         )}
-                        <span className="text-base font-semibold text-white">
-                          {match.away_team.name}
-                        </span>
                       </div>
-                      <span className="text-xs text-gray-400">Away</span>
                     </div>
                   </div>
                 );
