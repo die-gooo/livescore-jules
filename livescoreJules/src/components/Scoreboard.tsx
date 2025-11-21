@@ -273,16 +273,16 @@ export default function Scoreboard() {
               >
                 ‹
               </button>
-              <div className="flex flex-col items-center">
-                <h2 className="text-lg font-semibold text-white">
-                  {selectedRound ? Giornata ${selectedRound} : "Tutte le partite"}
-                </h2>
-                {roundDate && (
-                  <p className="text-xs text-gray-400">
-                    {roundDate}
-                  </p>
-                )}
-              </div>
+<div className="flex flex-col items-center">
+  <h2 className="text-lg font-semibold text-white">
+    {selectedRound ? `Giornata ${selectedRound}` : "Tutte le partite"}
+  </h2>
+  {roundDate && (
+    <p className="text-xs text-gray-400">
+      {roundDate}
+    </p>
+  )}
+</div>
               <button
                 onClick={handleNextRound}
                 disabled={currentRoundIndex === -1 || currentRoundIndex >= rounds.length - 1}
