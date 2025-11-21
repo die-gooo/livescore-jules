@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 
 type Match = {
   id: string;
+  round: string | null;
   home_score: number;
   away_score: number;
   status: string;
@@ -18,6 +19,8 @@ export default function Scoreboard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [badge, setBadge] = useState<{ id: string; text: string; color: string } | null>(null);
+  const [selectedRound, setSelectedRound] = useState<string | "all">("all");
+
   const matchesRef = useRef<Match[]>(matches);
 
   useEffect(() => {
@@ -53,7 +56,6 @@ export default function Scoreboard() {
     return `ore ${time} – ${date}`;
   };
 
-  // Decide se mostrare GOAL o Reset in base ai punteggi
   const computeBadgeFromScores = (
     prev: { home_score: number; away_score: number } | undefined,
     next: { home_score: number; away_score: number }
@@ -62,7 +64,6 @@ export default function Scoreboard() {
     if (prev.home_score === next.home_score && prev.away_score === next.away_score) {
       return null;
     }
-    // Se dopo l'update il risultato è 0-0, consideriamolo un reset
     if (next.home_score === 0 && next.away_score === 0) {
       return { text: "Reset", color: "bg-slate-500" };
     }
@@ -75,6 +76,7 @@ export default function Scoreboard() {
         .from("matches")
         .select(`
           id,
+          round,
           start_time,
           status,
           home_score,
@@ -94,6 +96,7 @@ export default function Scoreboard() {
       if (data) {
         const processed: Match[] = (data as any[]).map((m) => ({
           id: String(m.id),
+          round: m.round ?? null,
           home_score: m.home_score ?? 0,
           away_score: m.away_score ?? 0,
           status: m.status ?? "in programma",
@@ -120,7 +123,7 @@ export default function Scoreboard() {
 
         if (localBadge) {
           setBadge(localBadge);
-          setTimeout(() => setBadge(null), 6000); // badge più longevo
+          setTimeout(() => setBadge(null), 6000);
         }
       }
 
@@ -180,6 +183,16 @@ export default function Scoreboard() {
     );
   }
 
+  // calcolo giornate uniche
+  const rounds = Array.from(
+    new Set(matches.map((m) => m.round).filter((r): r is string => !!r))
+  ).sort((a, b) => parseInt(a) - parseInt(b));
+
+  const visibleMatches =
+    selectedRound === "all"
+      ? matches
+      : matches.filter((m) => m.round === selectedRound);
+
   return (
     <main className="min-h-screen bg-[#050816] text-white">
       <div className="mx-auto w-full max-w-6xl px-4 py-6 flex flex-col gap-4">
@@ -200,19 +213,50 @@ export default function Scoreboard() {
           </div>
         </header>
 
+        {/* FILTRO GIORNATE */}
+        <section className="flex flex-col gap-2">
+          <span className="text-xs text-slate-400 mb-1">
+            Filtra per giornata
+          </span>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <button
+              onClick={() => setSelectedRound("all")}
+              className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium border ${
+                selectedRound === "all"
+                  ? "bg-sky-500 text-white border-sky-500"
+                  : "bg-transparent text-slate-300 border-slate-600"
+              }`}
+            >
+              Tutte
+            </button>
+            {rounds.map((round) => (
+              <button
+                key={round}
+                onClick={() => setSelectedRound(round)}
+                className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium border ${
+                  selectedRound === round
+                    ? "bg-sky-500 text-white border-sky-500"
+                    : "bg-transparent text-slate-300 border-slate-600"
+                }`}
+              >
+                Giornata {round}
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* LISTA MATCH */}
         <section className="flex-1 space-y-4">
-          {matches.length === 0 ? (
+          {visibleMatches.length === 0 ? (
             <p className="text-center text-sm text-slate-400">
-              Nessuna partita in programma.
+              Nessuna partita trovata per questa giornata.
             </p>
           ) : (
-            matches.map((match) => (
+            visibleMatches.map((match) => (
               <article
                 key={match.id}
                 className="relative mx-auto w-full max-w-md sm:max-w-lg md:max-w-2xl rounded-2xl bg-[#0b1015] border border-slate-800/70 p-4 sm:p-5 shadow-sm"
               >
-                {/* Badge GOAL / Reset */}
                 {badge && badge.id === match.id && (
                   <span
                     className={`absolute -top-2 right-4 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse ${badge.color}`}
@@ -221,11 +265,11 @@ export default function Scoreboard() {
                   </span>
                 )}
 
-                {/* Riga stato + competizione */}
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="flex flex-col">
                     <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
-                      {match.competition.name || "Match"}
+                      {match.competition.name || "Match"} •{" "}
+                      {match.round ? `Giornata ${match.round}` : ""}
                     </span>
                     <span className="text-[11px] text-slate-500">
                       {formatStartTime(match.start_time)}
@@ -240,9 +284,7 @@ export default function Scoreboard() {
                   </div>
                 </div>
 
-                {/* Riga principale: Home – score – Away */}
                 <div className="flex items-center gap-4">
-                  {/* Home */}
                   <div className="flex w-1/3 flex-col items-end gap-1 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <span className="text-sm font-semibold text-slate-50 line-clamp-1">
@@ -259,7 +301,6 @@ export default function Scoreboard() {
                     <span className="text-[11px] text-slate-400">Home</span>
                   </div>
 
-                  {/* Score */}
                   <div className="flex w-1/3 flex-col items-center gap-1">
                     <p className="text-3xl font-extrabold tracking-tight tabular-nums text-slate-50">
                       {match.home_score}
@@ -268,7 +309,6 @@ export default function Scoreboard() {
                     </p>
                   </div>
 
-                  {/* Away */}
                   <div className="flex w-1/3 flex-col items-start gap-1 text-left">
                     <div className="flex items-center justify-start gap-2">
                       {match.away_team.logo_url && (
