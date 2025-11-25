@@ -59,35 +59,68 @@ export default function Scoreboard() {
     return { text: "GOAL", color: "bg-emerald-500" };
   };
 
-  const getStatusPill = (status: string) => {
-    const s = status.toLowerCase();
-    if (s.indexOf("live") !== -1 || s === "halftime" || s.indexOf("1t") !== -1 || s.indexOf("2t") !== -1) {
-      return {
-        label: s === "halftime" ? "Halftime" : "Live",
-        className: "bg-red-500/10 text-red-500",
-        dot: true,
-      };
-    }
-    if (s === "final" || s === "ft") {
-      return {
-        label: "FT",
-        className: "bg-sky-500/10 text-sky-400",
-        dot: false,
-      };
-    }
-    if (s === "in programma" || s === "scheduled") {
-      return {
-        label: "In programma",
-        className: "bg-gray-500/10 text-gray-300",
-        dot: false,
-      };
-    }
+const getStatusPill = (status: string) => {
+  const s = status.toLowerCase();
+
+  // INTERVALLO → arancione
+  if (s === "halftime") {
     return {
-      label: status || "Altro",
-      className: "bg-gray-500/10 text-gray-400",
+      label: "Intervallo",
+      className: "bg-orange-500/10 text-orange-400",
       dot: false,
     };
+  }
+
+  // LIVE 1T / LIVE 2T → badge rosso + testo "1T" / "2T"
+  if (s.includes("live")) {
+    // Determina se è primo tempo o secondo
+    const isFirstHalf = s.includes("1") || s.includes("1°") || s.includes("1t");
+    const isSecondHalf = s.includes("2") || s.includes("2°") || s.includes("2t");
+
+    const label = isFirstHalf ? "1T" : isSecondHalf ? "2T" : "Live";
+
+    return {
+      label,
+      className: "bg-red-500/10 text-red-500",
+      dot: true,
+    };
+  }
+
+  // TERMINATA → diventa "Final", verde
+  if (s === "terminata" || s === "final" || s === "ft") {
+    return {
+      label: "Final",
+      className: "bg-green-500/10 text-green-400",
+      dot: false,
+    };
+  }
+
+  // RINVIATA → viola
+  if (s === "rinviata") {
+    return {
+      label: "Rinviata",
+      className: "bg-purple-500/10 text-purple-400",
+      dot: false,
+    };
+  }
+
+  // IN PROGRAMMA → grigio
+  if (s === "in programma" || s === "scheduled") {
+    return {
+      label: "In programma",
+      className: "bg-gray-500/10 text-gray-300",
+      dot: false,
+    };
+  }
+
+  // DEFAULT
+  return {
+    label: status || "Altro",
+    className: "bg-gray-500/10 text-gray-400",
+    dot: false,
   };
+};
+
 
   useEffect(() => {
     const fetchMatches = async () => {
