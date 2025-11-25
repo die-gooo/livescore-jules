@@ -6,7 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
 type MatchWithTeams = {
-  id: number;
+  id: string;
   start_time: string | null;
   status: string;
   home_score: number;
@@ -15,67 +15,125 @@ type MatchWithTeams = {
   away_team: { name: string; logo_url: string | null };
 };
 
+const LIVE_STATUSES = ["live 1°t", "live 2°t", "halftime"];
+const timeZone = "Europe/Rome";
+
 export default function AdminPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [match, setMatch] = useState<MatchWithTeams | null>(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [match, setMatch] = useState<MatchWithTeams | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
+  // 1. Recupero utente loggato
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
+    const loadUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        router.push("/login");
+        return;
+      }
+      setUser(data.user);
     };
-    getUser();
-  }, []);
+    loadUser();
+  }, [router]);
 
-  const fetchMatch = async () => {
+  // 2. Recupero la partita da gestire per la squadra dell'admin
+  useEffect(() => {
     if (!user) return;
 
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("team_id")
-      .eq("id", user.id)
-      .single();
+    const fetchMatch = async () => {
+      setLoading(true);
+      setError(null);
 
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
-      setLoading(false);
-      return;
-    }
+      // profilo (per team_id)
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("team_id")
+        .eq("id", user.id)
+        .single();
 
-    const { data: matchData, error: matchError } = await supabase
-      .from("matches")
-      .select(
+      if (profileError || !profile?.team_id) {
+        console.error("Error fetching user profile:", profileError);
+        setError("Profilo non valido o nessuna squadra associata.");
+        setLoading(false);
+        return;
+      }
+
+      // tutte le partite della squadra, ordinate per data
+      const { data: matchData, error: matchError } = await supabase
+        .from("matches")
+        .select(
+          `
+          id,
+          start_time,
+          status,
+          home_score,
+          away_score,
+          home_team:teams!matches_home_team_id_fkey (name, logo_url),
+          away_team:teams!matches_away_team_id_fkey (name, logo_url)
         `
-        id,
-        start_time,
-        status,
-        home_score,
-        away_score,
-        home_team:teams!matches_home_team_id_fkey (name, logo_url),
-        away_team:teams!matches_away_team_id_fkey (name, logo_url)
-      `
-      )
-      .or(`home_team_id.eq.${profile.team_id},away_team_id.eq.${profile.team_id}`)
-      .single();
+        )
+        .or(
+          `home_team_id.eq.${profile.team_id},away_team_id.eq.${profile.team_id}`
+        )
+        .order("start_time", { ascending: true });
 
-    if (matchError) {
-      console.error("Error fetching match:", matchError);
-      setLoading(false);
-      return;
-    }
+      if (matchError) {
+        console.error("Error fetching matches:", matchError);
+        setError("Errore nel caricamento delle partite.");
+        setLoading(false);
+        return;
+      }
 
-    if (matchData) {
-      const raw: any = matchData;
+      const rows = Array.isArray(matchData) ? matchData : [];
 
-      const rawHome = Array.isArray(raw.home_team) ? raw.home_team[0] : raw.home_team;
-      const rawAway = Array.isArray(raw.away_team) ? raw.away_team[0] : raw.away_team;
+      if (!rows.length) {
+        setMatch(null);
+        setLoading(false);
+        return;
+      }
+
+      const now = new Date();
+
+      // 1: partita live
+      let chosen =
+        rows.find((m: any) => LIVE_STATUSES.includes(m.status)) ?? null;
+
+      // 2: prossima in programma
+      if (!chosen) {
+        const upcoming = rows.filter((m: any) => {
+          if (!m.start_time) return false;
+          const d = new Date(m.start_time);
+          if (isNaN(d.getTime())) return false;
+          return d >= now;
+        });
+        if (upcoming.length > 0) {
+          chosen = upcoming[0];
+        }
+      }
+
+      // 3: se nulla, ultima giocata
+      if (!chosen) {
+        chosen = rows[rows.length - 1];
+      }
+
+      if (!chosen) {
+        setMatch(null);
+        setLoading(false);
+        return;
+      }
+
+      const raw: any = chosen;
+      const rawHome = Array.isArray(raw.home_team)
+        ? raw.home_team[0]
+        : raw.home_team;
+      const rawAway = Array.isArray(raw.away_team)
+        ? raw.away_team[0]
+        : raw.away_team;
 
       const normalized: MatchWithTeams = {
-        id: raw.id,
+        id: String(raw.id),
         start_time: raw.start_time ?? null,
         status: raw.status ?? "in programma",
         home_score: raw.home_score ?? 0,
@@ -91,15 +149,10 @@ export default function AdminPage() {
       };
 
       setMatch(normalized);
-    }
+      setLoading(false);
+    };
 
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchMatch();
-    }
+    fetchMatch();
   }, [user]);
 
   const formatStartTime = (start: string | null) => {
@@ -107,56 +160,40 @@ export default function AdminPage() {
     const d = new Date(start);
     if (isNaN(d.getTime())) return "";
     const time = d.toLocaleTimeString("it-IT", {
-      timeZone: "Europe/Rome",
+      timeZone,
       hour: "2-digit",
       minute: "2-digit",
     });
     const date = d.toLocaleDateString("it-IT", {
-      timeZone: "Europe/Rome",
+      timeZone,
       day: "2-digit",
       month: "2-digit",
-      year: "numeric",
     });
-    return `ore ${time} – ${date}`;
+    return `${date} • ${time}`;
   };
 
-  const updateScore = async (team: "home" | "away", delta: 1 | -1) => {
+  const updateScore = async (
+    field: "home_score" | "away_score",
+    delta: 1 | -1
+  ) => {
     if (!match) return;
-
-    const field = team === "home" ? "home_score" : "away_score";
-    const current = team === "home" ? match.home_score : match.away_score;
-    const nextScore = Math.max(0, current + delta);
+    const newValue = Math.max(0, match[field] + delta);
 
     const { error } = await supabase
       .from("matches")
-      .update({ [field]: nextScore })
+      .update({ [field]: newValue })
       .eq("id", match.id);
 
     if (error) {
       console.error("Error updating score:", error);
+      setError("Errore nell'aggiornamento del punteggio.");
       return;
     }
 
-    setMatch((prev) =>
-      prev
-        ? {
-            ...prev,
-            [field]: nextScore,
-          }
-        : prev
-    );
+    setMatch({ ...match, [field]: newValue });
   };
 
-  const updateStatus = async (
-    status:
-      | "in programma"
-      | "live 1°t"
-      | "live 2°t"
-      | "halftime"
-      | "final"
-      | "sospesa"
-      | "rinviata"
-  ) => {
+  const updateStatus = async (status: string) => {
     if (!match) return;
 
     const { error } = await supabase
@@ -166,17 +203,11 @@ export default function AdminPage() {
 
     if (error) {
       console.error("Error updating status:", error);
+      setError("Errore nell'aggiornamento dello stato.");
       return;
     }
 
-    setMatch((prev) =>
-      prev
-        ? {
-            ...prev,
-            status,
-          }
-        : prev
-    );
+    setMatch({ ...match, status });
   };
 
   const resetMatch = async () => {
@@ -184,241 +215,185 @@ export default function AdminPage() {
 
     const { error } = await supabase
       .from("matches")
-      .update({ home_score: 0, away_score: 0, status: "in programma" })
+      .update({
+        home_score: 0,
+        away_score: 0,
+        status: "in programma",
+      })
       .eq("id", match.id);
 
     if (error) {
       console.error("Error resetting match:", error);
+      setError("Errore nel reset della partita.");
       return;
     }
 
-    setMatch((prev) =>
-      prev
-        ? {
-            ...prev,
-            home_score: 0,
-            away_score: 0,
-            status: "in programma",
-          }
-        : prev
-    );
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
+    setMatch({
+      ...match,
+      home_score: 0,
+      away_score: 0,
+      status: "in programma",
+    });
   };
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#111418] text-slate-300">
-        <span className="text-sm">Caricamento dashboard...</span>
+      <main className="min-h-screen flex items-center justify-center bg-[#0b1016] text-white">
+        <p>Carico la partita...</p>
       </main>
     );
   }
 
   if (!match) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#111418] text-white">
-        <button
-          onClick={handleLogout}
-          className="absolute top-4 right-4 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold"
-        >
-          Logout
-        </button>
-        <h1 className="text-lg font-semibold mb-2">Match Admin</h1>
-        <p className="text-sm text-slate-400 text-center px-6">
-          Nessuna partita associata al tuo profilo.
-        </p>
+      <main className="min-h-screen flex items-center justify-center bg-[#0b1016] text-white">
+        <p>Nessuna partita associata al tuo profilo.</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#111418] text-white flex flex-col items-center">
-      <div className="relative mx-auto flex h-auto min-h-screen w-full max-w-lg flex-col bg-[#111418]">
-        {/* HEADER STICKY */}
-        <div className="sticky top-0 z-10 bg-[#111418] pt-4">
-          <div className="flex items-center p-4 pb-2">
-            <div className="flex size-12 shrink-0 items-center justify-start text-white">
-              <span className="material-symbols-outlined">timer</span>
-            </div>
-            <h1 className="flex-1 text-center text-lg font-bold leading-tight tracking-[-0.015em]">
-              Match Admin
-            </h1>
-            <div className="flex w-12 items-center justify-end">
-              <button
-                onClick={handleLogout}
-                className="flex h-8 cursor-pointer items-center justify-center rounded-full bg-red-500 px-3 text-[11px] font-semibold"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
+    <main className="min-h-screen bg-[#0b1016] text-white flex items-center justify-center px-4">
+      <div className="w-full max-w-3xl rounded-2xl bg-[#141b23] p-6 shadow-xl border border-[#222b36]">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-semibold">Pannello Admin</h1>
+          <span className="text-xs text-gray-400">
+            {match.start_time
+              ? formatStartTime(match.start_time)
+              : "Orario da definire"}
+          </span>
+        </div>
 
-          {/* Tabs (solo UI) */}
-          <div className="flex gap-8 border-b border-[#3b4754] px-4">
-            <button className="flex flex-col items-center justify-center border-b-[3px] border-b-sky-500 pb-[13px] pt-4 text-sky-500">
-              <p className="text-sm font-bold tracking-[0.015em]">Live</p>
-            </button>
-            <button className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent pb-[13px] pt-4 text-[#9cabba]">
-              <p className="text-sm font-bold tracking-[0.015em]">Upcoming</p>
-            </button>
-            <button className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent pb-[13px] pt-4 text-[#9cabba]">
-              <p className="text-sm font-bold tracking-[0.015em]">Finished</p>
-            </button>
+        {error && (
+          <div className="mb-3 rounded-lg bg-red-900/40 px-3 py-2 text-sm text-red-200">
+            {error}
+          </div>
+        )}
+
+        {/* Scoreboard */}
+        <div className="mb-6 grid grid-cols-3 items-center gap-4">
+          <div className="text-right">
+            <p className="text-sm text-gray-400 uppercase">Casa</p>
+            <p className="text-xl font-semibold">{match.home_team.name}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-4xl font-bold">
+              {match.home_score} - {match.away_score}
+            </p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-gray-400">
+              Stato: {match.status}
+            </p>
+          </div>
+          <div className="text-left">
+            <p className="text-sm text-gray-400 uppercase">Ospiti</p>
+            <p className="text-xl font-semibold">{match.away_team.name}</p>
           </div>
         </div>
 
-        {/* CONTENUTO */}
-        <div className="flex-1 bg-[#182029] px-4 py-4 pb-6">
-          {/* Card match principale */}
-          <div className="flex flex-col gap-4 rounded-lg bg-[#111418] p-4">
-            {/* Riga titolo + stato */}
-            <div className="flex w-full items-start justify-between gap-4">
-              <div className="flex flex-1 items-start gap-3">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#283039] text-white">
-                  <span className="material-symbols-outlined">
-                    sports_soccer
-                  </span>
-                </div>
-                <div className="flex flex-1 flex-col justify-center">
-                  <p className="text-base font-medium">
-                    {match.home_team.name} vs {match.away_team.name}
-                  </p>
-                  <p className="text-xs text-[#9cabba]">
-                    {formatStartTime(match.start_time)}
-                  </p>
-                </div>
-              </div>
-              <div className="shrink-0">
-                <div className="flex h-7 items-center justify-center rounded-full bg-red-600/20 px-3">
-                  <p className="text-xs font-bold text-red-400 uppercase">
-                    {match.status}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Riga score centrale */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col items-start gap-1">
-                <span className="text-xs text-[#9cabba] uppercase">Home</span>
-                <span className="text-sm font-semibold">
-                  {match.home_team.name}
-                </span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] text-[#9cabba] uppercase">
-                  Score
-                </span>
-                <span className="text-3xl font-bold tracking-tight tabular-nums">
-                  {match.home_score}
-                  <span className="mx-1 text-2xl text-[#9cabba]">-</span>
-                  {match.away_score}
-                </span>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-xs text-[#9cabba] uppercase">Away</span>
-                <span className="text-sm font-semibold">
-                  {match.away_team.name}
-                </span>
-              </div>
-            </div>
-
-            {/* Controlli score */}
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              {/* Home score */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-white">
-                  Home score
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updateScore("home", -1)}
-                    className="flex size-8 items-center justify-center rounded-md bg-[#283039] text-white hover:bg-[#3b4754]"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    readOnly
-                    value={match.home_score}
-                    className="w-full rounded-md border-0 bg-[#283039] px-3 py-2 text-center text-sm text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updateScore("home", +1)}
-                    className="flex size-8 items-center justify-center rounded-md bg-[#283039] text-white hover:bg-[#3b4754]"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {/* Away score */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-white">
-                  Away score
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updateScore("away", -1)}
-                    className="flex size-8 items-center justify-center rounded-md bg-[#283039] text-white hover:bg-[#3b4754]"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    readOnly
-                    value={match.away_score}
-                    className="w-full rounded-md border-0 bg-[#283039] px-3 py-2 text-center text-sm text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updateScore("away", +1)}
-                    className="flex size-8 items-center justify-center rounded-md bg-[#283039] text-white hover:bg-[#3b4754]"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Status + reset */}
-            <div className="flex flex-col gap-3 mt-2">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-white">
-                  Match status
-                </label>
-                <select
-                  value={match.status}
-                  onChange={(e) =>
-                    updateStatus(e.target.value as any)
-                  }
-                  className="w-full rounded-md border-0 bg-[#283039] p-2 text-sm text-white"
-                >
-                  <option value="in programma">In programma</option>
-                  <option value="live 1°t">Live 1°T</option>
-                  <option value="live 2°t">Live 2°T</option>
-                  <option value="halftime">Halftime</option>
-                  <option value="final">Final</option>
-                  <option value="sospesa">Sospesa</option>
-                  <option value="rinviata">Rinviata</option>
-                </select>
-              </div>
-
+        {/* Controlli punteggio */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="rounded-xl bg-[#1b2430] p-4">
+            <p className="mb-2 text-sm text-gray-300">Punteggio Casa</p>
+            <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={resetMatch}
-                className="w-full rounded-lg bg-[#283039] px-3 py-2 text-sm font-medium text-white hover:bg-[#3b4754]"
+                onClick={() => updateScore("home_score", -1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-600 text-lg"
               >
-                Reset (0 - 0, In programma)
+                -
+              </button>
+              <span className="min-w-[2ch] text-center text-xl font-semibold">
+                {match.home_score}
+              </span>
+              <button
+                type="button"
+                onClick={() => updateScore("home_score", 1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-400 text-lg"
+              >
+                +
               </button>
             </div>
           </div>
+
+          <div className="rounded-xl bg-[#1b2430] p-4">
+            <p className="mb-2 text-sm text-gray-300">Punteggio Ospiti</p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => updateScore("away_score", -1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-600 text-lg"
+              >
+                -
+              </button>
+              <span className="min-w-[2ch] text-center text-xl font-semibold">
+                {match.away_score}
+              </span>
+              <button
+                type="button"
+                onClick={() => updateScore("away_score", 1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-400 text-lg"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Controlli stato */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 text-sm">
+          <button
+            type="button"
+            onClick={() => updateStatus("in programma")}
+            className="rounded-lg bg-[#283039] px-3 py-2 hover:bg-[#3b4754]"
+          >
+            In programma
+          </button>
+          <button
+            type="button"
+            onClick={() => updateStatus("live 1°t")}
+            className="rounded-lg bg-[#283039] px-3 py-2 hover:bg-[#3b4754]"
+          >
+            Live 1°T
+          </button>
+          <button
+            type="button"
+            onClick={() => updateStatus("live 2°t")}
+            className="rounded-lg bg-[#283039] px-3 py-2 hover:bg-[#3b4754]"
+          >
+            Live 2°T
+          </button>
+          <button
+            type="button"
+            onClick={() => updateStatus("halftime")}
+            className="rounded-lg bg-[#283039] px-3 py-2 hover:bg-[#3b4754]"
+          >
+            Intervallo
+          </button>
+          <button
+            type="button"
+            onClick={() => updateStatus("terminata")}
+            className="rounded-lg bg-green-700 px-3 py-2 hover:bg-green-800"
+          >
+            Terminata
+          </button>
+          <button
+            type="button"
+            onClick={() => updateStatus("rinviata")}
+            className="rounded-lg bg-yellow-700 px-3 py-2 hover:bg-yellow-800"
+          >
+            Rinviata
+          </button>
+        </div>
+
+        {/* Reset */}
+        <div className="border-t border-[#222b36] pt-4">
+          <button
+            type="button"
+            onClick={resetMatch}
+            className="w-full rounded-lg bg-[#283039] px-3 py-2 text-sm font-medium text-white hover:bg-[#3b4754]"
+          >
+            Reset (0 - 0, In programma)
+          </button>
         </div>
       </div>
     </main>
