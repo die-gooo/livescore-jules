@@ -209,7 +209,7 @@ function AdminContent() {
     // Send notification (fire and forget - don't block UI)
     sendNotification(
       updatedMatch,
-      `⚽ ${field === "home_score" ? "Goal " + match.home_team.name : "Goal " + match.away_team.name}!`
+      `⚽ ${field === "home_score" ? "Goal " + updatedMatch.home_team.name : "Goal " + updatedMatch.away_team.name}!`
     );
   };
 

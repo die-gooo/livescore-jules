@@ -5,10 +5,15 @@ import { createServerClient } from '@supabase/ssr';
 import { sendPushNotifications, PushPayload } from '@/lib/webPush';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Admin client for database operations
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+// Use service key if available, otherwise fall back to anon key for development
+// In production, SUPABASE_SERVICE_ROLE_KEY should be set
+const supabaseAdmin = createClient(
+  supabaseUrl,
+  supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
