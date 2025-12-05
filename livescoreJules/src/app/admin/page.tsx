@@ -188,6 +188,9 @@ function AdminContent() {
     if (!match) return;
     const newValue = Math.max(0, match[field] + delta);
 
+    // Check if value actually changed
+    if (newValue === match[field]) return;
+
     const { error } = await supabase
       .from("matches")
       .update({ [field]: newValue })
@@ -199,11 +202,22 @@ function AdminContent() {
       return;
     }
 
-    setMatch({ ...match, [field]: newValue });
+    // Update local state
+    const updatedMatch = { ...match, [field]: newValue };
+    setMatch(updatedMatch);
+
+    // Send notification (fire and forget - don't block UI)
+    sendNotification(
+      updatedMatch,
+      `⚽ ${field === "home_score" ? "Goal " + match.home_team.name : "Goal " + match.away_team.name}!`
+    );
   };
 
   const updateStatus = async (status: string) => {
     if (!match) return;
+
+    // Check if status actually changed
+    if (status === match.status) return;
 
     const { error } = await supabase
       .from("matches")
@@ -216,7 +230,43 @@ function AdminContent() {
       return;
     }
 
-    setMatch({ ...match, status });
+    // Update local state
+    const updatedMatch = { ...match, status };
+    setMatch(updatedMatch);
+
+    // Send notification (fire and forget - don't block UI)
+    const statusLabels: Record<string, string> = {
+      "in programma": "📅 Match Scheduled",
+      "live 1°t": "🏁 Match Started - 1st Half",
+      "live 2°t": "⚽ 2nd Half Started",
+      "halftime": "⏸️ Half Time",
+      "terminata": "🏁 Full Time",
+      "rinviata": "⚠️ Match Postponed",
+    };
+    const title = statusLabels[status] || `Status: ${status}`;
+    sendNotification(updatedMatch, title);
+  };
+
+  // Helper to send push notifications (async, doesn't block UI)
+  const sendNotification = async (currentMatch: MatchWithTeams, title: string) => {
+    try {
+      await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId: currentMatch.id,
+          title,
+          homeTeam: currentMatch.home_team.name,
+          awayTeam: currentMatch.away_team.name,
+          homeScore: currentMatch.home_score,
+          awayScore: currentMatch.away_score,
+          status: currentMatch.status,
+        }),
+      });
+    } catch (err) {
+      // Log but don't break the admin flow
+      console.error("Failed to send notifications:", err);
+    }
   };
 
   const resetMatch = async () => {
