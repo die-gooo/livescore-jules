@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 type MatchWithTeams = {
   id: string;
@@ -18,7 +19,7 @@ type MatchWithTeams = {
 const LIVE_STATUSES = ["live 1°t", "live 2°t", "halftime"];
 const timeZone = "Europe/Rome";
 
-export default function AdminPage() {
+function AdminContent() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,11 +99,11 @@ export default function AdminPage() {
 
       // 1: partita live
       let chosen =
-        rows.find((m: any) => LIVE_STATUSES.includes(m.status)) ?? null;
+        rows.find((m: MatchWithTeams) => LIVE_STATUSES.includes(m.status)) ?? null;
 
       // 2: prossima in programma
       if (!chosen) {
-        const upcoming = rows.filter((m: any) => {
+        const upcoming = rows.filter((m: MatchWithTeams) => {
           if (!m.start_time) return false;
           const d = new Date(m.start_time);
           if (isNaN(d.getTime())) return false;
@@ -124,7 +125,10 @@ export default function AdminPage() {
         return;
       }
 
-      const raw: any = chosen;
+      const raw = chosen as MatchWithTeams & {
+        home_team: { name: string; logo_url: string | null } | Array<{ name: string; logo_url: string | null }>;
+        away_team: { name: string; logo_url: string | null } | Array<{ name: string; logo_url: string | null }>;
+      };
       const rawHome = Array.isArray(raw.home_team)
         ? raw.home_team[0]
         : raw.home_team;
@@ -397,5 +401,13 @@ export default function AdminPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <ErrorBoundary>
+      <AdminContent />
+    </ErrorBoundary>
   );
 }
