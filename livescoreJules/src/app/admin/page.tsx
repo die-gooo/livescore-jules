@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
+// Normalized type for component state
 type MatchWithTeams = {
   id: string;
   start_time: string | null;
@@ -14,6 +15,17 @@ type MatchWithTeams = {
   away_score: number;
   home_team: { name: string; logo_url: string | null };
   away_team: { name: string; logo_url: string | null };
+};
+
+// Raw type from Supabase query (teams are arrays due to join)
+type RawMatchData = {
+  id: string;
+  start_time: string | null;
+  status: string;
+  home_score: number;
+  away_score: number;
+  home_team: Array<{ name: string; logo_url: string | null }>;
+  away_team: Array<{ name: string; logo_url: string | null }>;
 };
 
 const LIVE_STATUSES = ["live 1°t", "live 2°t", "halftime"];
@@ -98,12 +110,12 @@ function AdminContent() {
       const now = new Date();
 
       // 1: partita live
-      let chosen =
-        rows.find((m: MatchWithTeams) => LIVE_STATUSES.includes(m.status)) ?? null;
+      let chosen: RawMatchData | undefined =
+        rows.find((m: RawMatchData) => LIVE_STATUSES.includes(m.status));
 
       // 2: prossima in programma
       if (!chosen) {
-        const upcoming = rows.filter((m: MatchWithTeams) => {
+        const upcoming = rows.filter((m: RawMatchData) => {
           if (!m.start_time) return false;
           const d = new Date(m.start_time);
           if (isNaN(d.getTime())) return false;
@@ -125,23 +137,16 @@ function AdminContent() {
         return;
       }
 
-      const raw = chosen as MatchWithTeams & {
-        home_team: { name: string; logo_url: string | null } | Array<{ name: string; logo_url: string | null }>;
-        away_team: { name: string; logo_url: string | null } | Array<{ name: string; logo_url: string | null }>;
-      };
-      const rawHome = Array.isArray(raw.home_team)
-        ? raw.home_team[0]
-        : raw.home_team;
-      const rawAway = Array.isArray(raw.away_team)
-        ? raw.away_team[0]
-        : raw.away_team;
+      // Normalize: extract first element from team arrays
+      const rawHome = chosen.home_team[0];
+      const rawAway = chosen.away_team[0];
 
       const normalized: MatchWithTeams = {
-        id: String(raw.id),
-        start_time: raw.start_time ?? null,
-        status: raw.status ?? "in programma",
-        home_score: raw.home_score ?? 0,
-        away_score: raw.away_score ?? 0,
+        id: String(chosen.id),
+        start_time: chosen.start_time ?? null,
+        status: chosen.status ?? "in programma",
+        home_score: chosen.home_score ?? 0,
+        away_score: chosen.away_score ?? 0,
         home_team: {
           name: rawHome?.name ?? "",
           logo_url: rawHome?.logo_url ?? null,
