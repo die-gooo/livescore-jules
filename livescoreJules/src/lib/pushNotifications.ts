@@ -98,9 +98,11 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
     
     if (!subscription) {
       // Subscribe to push
+      // Cast to satisfy TypeScript strict mode - the Uint8Array is valid for applicationServerKey
+      const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
       });
     }
 
