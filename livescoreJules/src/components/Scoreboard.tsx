@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import FollowMatchButton from "@/components/FollowMatchButton";
 
 type Match = {
   id: string;
@@ -382,11 +383,20 @@ const getStatusPill = (status: string) => {
                     key={match.id}
                     className="relative rounded-xl bg-[#121925] p-4 shadow-sm transition-shadow hover:shadow-lg"
                   >
+                    {/* Bell icon for notifications - top right */}
+                    <div className="absolute top-3 right-3">
+                      <FollowMatchButton
+                        matchId={match.id}
+                        homeTeam={match.home_team.name}
+                        awayTeam={match.away_team.name}
+                      />
+                    </div>
+
                     {/* Badge GOAL / Reset */}
                     {badge && badge.id === match.id && (
                       <span
                         className={
-                          "absolute -top-2 right-3 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse " +
+                          "absolute -top-2 right-14 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-md animate-pulse " +
                           badge.color
                         }
                       >

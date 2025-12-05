@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
+// Normalized type for component state
 type MatchWithTeams = {
   id: string;
   start_time: string | null;
@@ -15,10 +17,21 @@ type MatchWithTeams = {
   away_team: { name: string; logo_url: string | null };
 };
 
+// Raw type from Supabase query (teams are arrays due to join)
+type RawMatchData = {
+  id: string;
+  start_time: string | null;
+  status: string;
+  home_score: number;
+  away_score: number;
+  home_team: Array<{ name: string; logo_url: string | null }>;
+  away_team: Array<{ name: string; logo_url: string | null }>;
+};
+
 const LIVE_STATUSES = ["live 1°t", "live 2°t", "halftime"];
 const timeZone = "Europe/Rome";
 
-export default function AdminPage() {
+function AdminContent() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,12 +110,12 @@ export default function AdminPage() {
       const now = new Date();
 
       // 1: partita live
-      let chosen =
-        rows.find((m: any) => LIVE_STATUSES.includes(m.status)) ?? null;
+      let chosen: RawMatchData | undefined =
+        rows.find((m: RawMatchData) => LIVE_STATUSES.includes(m.status));
 
       // 2: prossima in programma
       if (!chosen) {
-        const upcoming = rows.filter((m: any) => {
+        const upcoming = rows.filter((m: RawMatchData) => {
           if (!m.start_time) return false;
           const d = new Date(m.start_time);
           if (isNaN(d.getTime())) return false;
@@ -124,20 +137,16 @@ export default function AdminPage() {
         return;
       }
 
-      const raw: any = chosen;
-      const rawHome = Array.isArray(raw.home_team)
-        ? raw.home_team[0]
-        : raw.home_team;
-      const rawAway = Array.isArray(raw.away_team)
-        ? raw.away_team[0]
-        : raw.away_team;
+      // Normalize: extract first element from team arrays
+      const rawHome = chosen.home_team[0];
+      const rawAway = chosen.away_team[0];
 
       const normalized: MatchWithTeams = {
-        id: String(raw.id),
-        start_time: raw.start_time ?? null,
-        status: raw.status ?? "in programma",
-        home_score: raw.home_score ?? 0,
-        away_score: raw.away_score ?? 0,
+        id: String(chosen.id),
+        start_time: chosen.start_time ?? null,
+        status: chosen.status ?? "in programma",
+        home_score: chosen.home_score ?? 0,
+        away_score: chosen.away_score ?? 0,
         home_team: {
           name: rawHome?.name ?? "",
           logo_url: rawHome?.logo_url ?? null,
@@ -179,6 +188,9 @@ export default function AdminPage() {
     if (!match) return;
     const newValue = Math.max(0, match[field] + delta);
 
+    // Check if value actually changed
+    if (newValue === match[field]) return;
+
     const { error } = await supabase
       .from("matches")
       .update({ [field]: newValue })
@@ -190,11 +202,22 @@ export default function AdminPage() {
       return;
     }
 
-    setMatch({ ...match, [field]: newValue });
+    // Update local state
+    const updatedMatch = { ...match, [field]: newValue };
+    setMatch(updatedMatch);
+
+    // Send notification (fire and forget - don't block UI)
+    sendNotification(
+      updatedMatch,
+      `⚽ ${field === "home_score" ? "Goal " + updatedMatch.home_team.name : "Goal " + updatedMatch.away_team.name}!`
+    );
   };
 
   const updateStatus = async (status: string) => {
     if (!match) return;
+
+    // Check if status actually changed
+    if (status === match.status) return;
 
     const { error } = await supabase
       .from("matches")
@@ -207,7 +230,43 @@ export default function AdminPage() {
       return;
     }
 
-    setMatch({ ...match, status });
+    // Update local state
+    const updatedMatch = { ...match, status };
+    setMatch(updatedMatch);
+
+    // Send notification (fire and forget - don't block UI)
+    const statusLabels: Record<string, string> = {
+      "in programma": "📅 Match Scheduled",
+      "live 1°t": "🏁 Match Started - 1st Half",
+      "live 2°t": "⚽ 2nd Half Started",
+      "halftime": "⏸️ Half Time",
+      "terminata": "🏁 Full Time",
+      "rinviata": "⚠️ Match Postponed",
+    };
+    const title = statusLabels[status] || `Status: ${status}`;
+    sendNotification(updatedMatch, title);
+  };
+
+  // Helper to send push notifications (async, doesn't block UI)
+  const sendNotification = async (currentMatch: MatchWithTeams, title: string) => {
+    try {
+      await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId: currentMatch.id,
+          title,
+          homeTeam: currentMatch.home_team.name,
+          awayTeam: currentMatch.away_team.name,
+          homeScore: currentMatch.home_score,
+          awayScore: currentMatch.away_score,
+          status: currentMatch.status,
+        }),
+      });
+    } catch (err) {
+      // Log but don't break the admin flow
+      console.error("Failed to send notifications:", err);
+    }
   };
 
   const resetMatch = async () => {
@@ -397,5 +456,13 @@ export default function AdminPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <ErrorBoundary>
+      <AdminContent />
+    </ErrorBoundary>
   );
 }
